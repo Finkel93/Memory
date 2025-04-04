@@ -1,5 +1,36 @@
-*.class
-*.log
+# scala 3
+.tasty
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
+# java
+*.class
+
+# sbt
+project/project
+project/target
+target
+
+# coursier
+null/
+
+# intellij idea
+*.log
+*.iml
+*.ipr
+*.iws
+.idea
+
+# vs code
+.vscode
+
+# bloop and metals
+.bloop
+.bsp
+
+# metals
+.metals
+project/metals.sbt
+
+# other
+.history
+.scala_dependencies
+.cache-main
