@@ -4,11 +4,11 @@ def main(): Unit = {
   val height = 26    // 4x + 2
   val width = 72     // 7x + 2
 
-  displayPlayer(1, 4)
+  showPlayer(1, 4)
 
   feldErstellen(height, width)
 
-  displayPlayer(2, 4)
+  showPlayer(2, 4)
 
 }
 
