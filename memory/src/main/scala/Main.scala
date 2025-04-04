@@ -13,7 +13,7 @@ def main(): Unit = {
 }
 
 
-def displayPlayer (id:Int, karten:Int) : Unit = {
+def showPlayer (id:Int, karten:Int) : Unit = {
 
   val top = "Spieler " + id + ":\n ----- \n"
   val mid = "|     |\n" * 2
