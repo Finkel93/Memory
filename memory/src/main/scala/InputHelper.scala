@@ -1,4 +1,4 @@
-object InputHelper {
+/*object InputHelper {
 
   /**
    * Holt eine gültige Kartenauswahl vom Benutzer.
@@ -7,6 +7,7 @@ object InputHelper {
    * @param readLineFunc Optional: Funktion zum Einlesen (für Tests)
    * @return Ein gültiger Index
    */
+
   def getInput(prompt: String, game: Game, readLineFunc: () => String = () => scala.io.StdIn.readLine()): Int = {
     var index = -1
     var valid = false
@@ -34,3 +35,4 @@ object InputHelper {
     index
   }
 }
+*/

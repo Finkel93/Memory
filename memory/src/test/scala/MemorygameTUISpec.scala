@@ -2,7 +2,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
 
 import java.io._
-
+/*
 class MemoryGameTUISpec extends AnyWordSpec with Matchers {
 
   "The MemoryGameTUI" should {
@@ -42,3 +42,5 @@ class MemoryGameTUISpec extends AnyWordSpec with Matchers {
     }
   }
 }
+
+ */

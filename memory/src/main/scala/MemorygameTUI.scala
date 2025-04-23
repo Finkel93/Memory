@@ -1,4 +1,4 @@
-object MemorygameTUI {
+/*object MemorygameTUI {
   def main(args: Array[String]): Unit = {
     println("Willkommen beim Memory-Spiel!")
 
@@ -43,3 +43,5 @@ object MemorygameTUI {
       println("Unentschieden!")
   }
 }
+
+ */
