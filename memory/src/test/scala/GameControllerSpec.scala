@@ -80,6 +80,31 @@ class GameControllerSpec extends AnyWordSpec with Matchers {
       winners.head.name shouldBe "P1"
     }
 
+    "print correct winners after game is over" in {
+      val cards = List(Card("A", true), Card("A", true))
+      val players = List(Player("P1", 2), Player("P2", 1))
+      val board = Board(cards)
+      val controller = new GameController(Game(board, players))
+
+      controller.isGameOver shouldBe true
+      val winners = controller.getWinners
+      val output = controller.printResult(winners)
+      output should be ("Der Gewinner ist: P1")
+    }
+
+    "print tie in cas of tie after game is over" in {
+      val cards = List(Card("A", true), Card("A", true))
+      val players = List(Player("P1", 1), Player("P2", 1))
+      val board = Board(cards)
+      val controller = new GameController(Game(board, players))
+
+      controller.isGameOver shouldBe true
+      val winners = controller.getWinners
+      val output = controller.printResult(winners)
+      output should be ("Unentschieden!")
+    }
+
+
     "show the correct board view" in {
       val cards = List(Card("A", true), Card("B", false))
       val board = Board(cards)

@@ -41,9 +41,6 @@ object MemorygameTUI {
 
     println("Spiel beendet.")
     val winners = controller.getWinners
-    if (winners.size == 1)
-      println(s"Der Gewinner ist: ${winners.head.name}")
-    else
-      println("Unentschieden!")
+    println(controller.printResult(winners))
   }
 }

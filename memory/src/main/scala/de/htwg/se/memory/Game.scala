@@ -11,10 +11,6 @@ case class Game(board: Board, players: List[Player], currentPlayerIndex: Int = 0
     }
   }
 
-
-
-  //def isGameOver: Boolean = board.isGameOver
-
   def isGameOver: Boolean = {
     // Überprüfen, ob alle Karten revealed sind
     board.cards.forall(_.isRevealed)
@@ -30,4 +26,11 @@ case class Game(board: Board, players: List[Player], currentPlayerIndex: Int = 0
     players.filter(_.score == maxScore)
   }
 
+  def printResult(winners: List[Player]) : String = {
+    if (winners.size == 1) {
+      s"Der Gewinner ist: ${winners.head.name}"
+    }
+    else
+      "Unentschieden!"
+  }
 }

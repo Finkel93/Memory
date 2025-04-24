@@ -40,4 +40,6 @@ class GameController(var game: Game) {
   def boardView: String = game.board.displayCards(game.board.cards)
 
   def getWinners: List[Player] = game.getWinners
+
+  def printResult(winner: List[Player]) : String = game.printResult(winner)
 }
