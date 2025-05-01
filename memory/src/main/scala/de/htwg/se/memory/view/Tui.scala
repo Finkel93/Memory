@@ -14,7 +14,7 @@ class Tui(val controller: Controller) extends Observer {
     gameLoop()
     println("Spiel beendet.")
     val winners = controller.getWinners
-    println(controller.game.printResult(winners))
+    println(controller.gameState.printResult(winners))
   }
 
   private def gameLoop(): Unit = {
@@ -38,11 +38,11 @@ class Tui(val controller: Controller) extends Observer {
   }
 
   private def handleInput(): Unit = {
-    if (controller.game.selectedIndices.isEmpty) {
-      val index1 = InputHelper.getInput("Erste Karte wählen: ", controller.game, () => scala.io.StdIn.readLine())
+    if (controller.gameState.selectedIndices.isEmpty) {
+      val index1 = InputHelper.getInput("Erste Karte wählen: ", controller.gameState, () => scala.io.StdIn.readLine())
       controller.selectCard(index1)
-    } else if (controller.game.selectedIndices.size == 1) {
-      val index2 = InputHelper.getInput("Zweite Karte wählen: ", controller.game, () => scala.io.StdIn.readLine())
+    } else if (controller.gameState.selectedIndices.size == 1) {
+      val index2 = InputHelper.getInput("Zweite Karte wählen: ", controller.gameState, () => scala.io.StdIn.readLine())
       controller.selectCard(index2)
       controller.nextTurn()
     }

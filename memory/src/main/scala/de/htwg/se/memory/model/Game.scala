@@ -6,7 +6,6 @@ case class Game(board: Board, players: List[Player], currentPlayerIndex: Int = 0
   def selectCard(index: Int): Game = {
     if (selectedIndices.contains(index) || board.cards(index).isRevealed) {
       throw new IllegalArgumentException();
-      this
     } else {
       val updatedBoard = board.revealCard(index)
       copy(board = updatedBoard, selectedIndices = selectedIndices :+ index)

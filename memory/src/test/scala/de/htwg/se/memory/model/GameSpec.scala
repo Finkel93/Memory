@@ -43,8 +43,8 @@ class GameSpec extends AnyWordSpec with Matchers {
       game = game.selectCard(1)
       val nextIndex = (game.currentPlayerIndex + 1) % players.length
 
-      val updatedGame = Game( game.board.hideCard(0), players)
-      val latestGame = Game( updatedGame.board.hideCard(1), players)
+      val updatedGame = Game(game.board.hideCard(0), players)
+      val latestGame = Game(updatedGame.board.hideCard(1), players)
 
       game.players(0).score shouldBe 0
       nextIndex shouldBe 1
@@ -85,7 +85,7 @@ class GameSpec extends AnyWordSpec with Matchers {
       val game = Game(board, players)
 
       val winners = game.getWinners
-      winners.map(_.name) should contain allOf ("Anna", "Ben")
+      winners.map(_.name) should contain allOf("Anna", "Ben")
     }
 
     "block wrong input" in {
@@ -103,6 +103,34 @@ class GameSpec extends AnyWordSpec with Matchers {
       val game = Game(board, players)
       val winners = game.getWinners
       winners.length shouldBe 0
+    }
+
+    "correctly print the result of the game" in {
+      // Testfall 1: Ein Spieler gewinnt
+      val board1 = Board(List(
+        Card("X", true), Card("X", true),
+        Card("Y", true), Card("Y", true)
+      ))
+      val players1 = List(Player("Anna", 2), Player("Ben", 0))
+      val game1 = Game(board1, players1)
+
+      val winners1 = game1.getWinners
+      val result1 = game1.printResult(winners1)
+
+      result1 shouldBe "Der Gewinner ist: Anna"
+
+      // Testfall 2: Unentschieden (mehrere Spieler mit der gleichen Punktzahl)
+      val board2 = Board(List(
+        Card("X", true), Card("X", true),
+        Card("Y", true), Card("Y", true)
+      ))
+      val players2 = List(Player("Anna", 1), Player("Ben", 1))
+      val game2 = Game(board2, players2)
+
+      val winners2 = game2.getWinners
+      val result2 = game2.printResult(winners2)
+
+      result2 shouldBe "Unentschieden!"
     }
   }
 }

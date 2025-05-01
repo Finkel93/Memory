@@ -10,7 +10,7 @@ class Controller(var gameState: Game) extends Observable {
       notifyObservers
     } catch {
       case _: IllegalArgumentException =>
-      // Fehlerbehandlung idk mustn't use try-catch anyway
+        throw new IllegalArgumentException("Karte bereits aufgedeckt")
     }
   }
 
@@ -31,7 +31,7 @@ class Controller(var gameState: Game) extends Observable {
           players = updatedPlayers,
           selectedIndices = List()  // Auswahl zurücksetzen
         )
-        //notifyObservers
+        notifyObservers
       } else {
         // Kein Treffer: Karten verdecken und Spieler wechseln
         // Beide Karten wieder verdecken
@@ -51,5 +51,4 @@ class Controller(var gameState: Game) extends Observable {
   def currentPlayer: Player = gameState.players(gameState.currentPlayerIndex)
   def boardView: String = gameState.board.displayCards(gameState.board.cards)
   def getWinners: List[Player] = gameState.getWinners
-  def game: Game = gameState
 }
