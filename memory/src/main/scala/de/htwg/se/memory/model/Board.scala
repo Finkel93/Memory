@@ -1,3 +1,5 @@
+package de.htwg.se.memory.model
+
 case class Board(cards: List[Card]) {
   def revealCard(index: Int): Board = {
     if (cards(index).isRevealed) {

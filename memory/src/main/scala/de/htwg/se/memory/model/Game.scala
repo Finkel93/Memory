@@ -1,3 +1,5 @@
+package de.htwg.se.memory.model
+
 case class Game(board: Board, players: List[Player], currentPlayerIndex: Int = 0, selectedIndices: List[Int] = List()) {
 
 
