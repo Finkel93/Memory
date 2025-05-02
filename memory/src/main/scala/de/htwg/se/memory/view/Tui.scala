@@ -8,7 +8,6 @@ class Tui(val controller: Controller) extends Observer {
   controller.add(this)
 
   def run(): Unit = {
-//    clearConsole()
     println("Willkommen beim Memory-Spiel!")
     println("\n" + controller.boardView)
     gameLoop()
@@ -25,21 +24,15 @@ class Tui(val controller: Controller) extends Observer {
     }
   }
 
-  private def clearConsole(): Unit = {
-    // ANSI Escape Code zum Löschen des Bildschirms
-    print("\u001b[H\u001b[2J")
-    System.out.flush()
-  }
+  def displayGame(): Unit = {
 
-  private def displayGame(): Unit = {
-//    clearConsole()
-//    println("\n" + controller.boardView)
     println(s"Spieler am Zug: ${controller.currentPlayer.name}")
   }
 
-  private def handleInput(): Unit = {
+  def handleInput(): Unit = {
     if (controller.gameState.selectedIndices.isEmpty) {
       val index1 = InputHelper.getInput("Erste Karte wählen: ", controller.gameState, () => scala.io.StdIn.readLine())
+      println("index1")
       controller.selectCard(index1)
     } else if (controller.gameState.selectedIndices.size == 1) {
       val index2 = InputHelper.getInput("Zweite Karte wählen: ", controller.gameState, () => scala.io.StdIn.readLine())
@@ -56,8 +49,10 @@ class Tui(val controller: Controller) extends Observer {
 
 object InputHelper {
   def getInput(prompt: String, game: Game, readLineFunc: () => String): Int = {
-    def readValidInput(): Int = {
-      print(prompt)
+    def readValidInput(controle: Boolean = false): Int = {
+      if (!controle) {
+        print(prompt)
+      }
       try {
         val input = readLineFunc().toInt
         if (isValidInput(input, game)) input
@@ -66,20 +61,22 @@ object InputHelper {
           readValidInput()
         }
       } catch {
-        case _: NumberFormatException =>
-          println("Bitte eine gültige Zahl eingeben.")
-          readValidInput()
-        case _: IndexOutOfBoundsException =>
-          println("Der Index ist außerhalb des gültigen Bereichs.")
-          readValidInput()
+        case e: NumberFormatException =>
+          if (controle) {
+            println("Bitte eine gültige Zahl eingeben.")
+          }
+          readValidInput(true)
       }
     }
 
     readValidInput()
   }
 
-  private def isValidInput(index: Int, game: Game): Boolean = {
+  def isValidInput(index: Int, game: Game): Boolean = {
     val inBounds = index >= 0 && index < game.board.cards.length
+    if(index >=  game.board.cards.length) {
+      return false
+    }
     val notRevealed = !game.board.cards(index).isRevealed
     val notSelected = !game.selectedIndices.contains(index)
     inBounds && notRevealed && notSelected
