@@ -30,10 +30,10 @@ jobs:
         run: sbt clean coverage test coverageReport
 
       - name: Upload coverage data to Coveralls
-#        run: sbt coverageReport coveralls
+        run: sbt coveralls
         env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-          COVERALLS_REPO_TOKEN: ${{  secrets.COVERALLS_REPO_TOKEN }}
-        run: |
-          export CI_BRANCH="${GITHUB_REF#refs/heads/}"
-          sbt clean jacoco jacocoCoveralls
+          # CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
+        # run: |
+        #   export CI_BRANCH="${GITHUB_REF#refs/heads/}"
+        #   sbt clean jacoco jacocoCoveralls
