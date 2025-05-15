@@ -30,16 +30,12 @@ class Tui(val controller: Controller) extends Observer {
   }
 
   def handleInput(): Unit = {
-    if (controller.gameState.selectedIndices.isEmpty) {
-      val index1 = InputHelper.getInput("Erste Karte wählen: ", controller.gameState, () => scala.io.StdIn.readLine())
-      println("index1")
-      controller.selectCard(index1)
-    } else if (controller.gameState.selectedIndices.size == 1) {
-      val index2 = InputHelper.getInput("Zweite Karte wählen: ", controller.gameState, () => scala.io.StdIn.readLine())
-      controller.selectCard(index2)
-      controller.nextTurn()
+    if (!controller.isGameOver) {
+      val input = InputHelper.getInput("Karte wählen: ", controller.gameState, () => scala.io.StdIn.readLine())
+      controller.handleInput(input)
     }
   }
+
 
   override def update: Unit = {
 //    clearConsole()

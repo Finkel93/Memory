@@ -167,7 +167,7 @@ class TuiSpec extends AnyWordSpec with Matchers {
         tui.handleInput()
       }
 
-      controller.gameState.selectedIndices.size shouldBe 0  // das in HI aufgerufenen nextturn setz auf leere lsite
+      controller.gameState.selectedIndices.size shouldBe 2  // da gameOver, liste nicht mehr auf leer gesetzt
     }
 
     "do nothing if two cards are already selected" in {

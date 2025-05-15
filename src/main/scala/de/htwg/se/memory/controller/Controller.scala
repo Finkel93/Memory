@@ -3,15 +3,29 @@ package de.htwg.se.memory.controller
 import de.htwg.se.memory.util.Observable
 import de.htwg.se.memory.model.{Game, Player}
 import de.htwg.se.memory.controller.strategy._
+import de.htwg.se.memory.controller.state._
+
 
 
 
 class Controller(var gameState: Game) extends Observable {
 
-  private var matchStrategy: MatchStrategy = new KeepOpenStrategy // Standardstrategie
+  var matchStrategy: MatchStrategy = new KeepOpenStrategy // Standardstrategie
+  var state: GameState = new WaitingFirstCardState
 
   def setMatchStrategy(strategy: MatchStrategy): Unit = {
     matchStrategy = strategy
+  }
+
+  def setState(newState: GameState): Unit = {
+    this.state = newState
+    notifyObservers
+  }
+
+  def getStateName: String = state.name
+
+  def handleInput(input: Int): Unit = {
+    state.handleInput(input, this)
   }
 
   def selectCard(index: Int): Unit = {

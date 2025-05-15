@@ -3,10 +3,54 @@ package de.htwg.se.memory.controller
 import de.htwg.se.memory.model.{Card, Board, Game, Player}
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
+import de.htwg.se.memory.controller.strategy._
+import de.htwg.se.memory.controller.state._
 
 class ControllerSpec extends AnyWordSpec with Matchers {
 
   "A Controller" should {
+
+    "set the match strategy and use it on nextTurn" in {
+      var strategyUsed = false
+
+      val testStrategy = new MatchStrategy {
+        override def handleMatch(controller: Controller, idx1: Int, idx2: Int): Unit = {
+          strategyUsed = true
+        }
+      }
+
+      val cards = List(Card("A", true), Card("A", true))
+      val board = Board(cards)
+      val players = List(Player("Anna"), Player("Ben"))
+      val game = Game(board, players, selectedIndices = List(0, 1))
+
+      val controller = new Controller(game)
+      controller.setMatchStrategy(testStrategy)
+
+      controller.nextTurn()
+
+      strategyUsed shouldBe true
+    }
+
+    "return the name of the current state" in {
+      val dummyState = new GameState {
+        override def handleInput(input: Int, controller: Controller): Unit = ()
+        override def name: String = "DummyState"
+      }
+
+      val controller = new Controller(
+        Game(Board(List(Card("A"), Card("B"))), List(Player("Anna"), Player("Ben")))
+      )
+
+      // Standardstate zu Beginn
+      //controller.getStateName should not be "DummyState"
+
+      controller.setState(dummyState)
+
+      controller.getStateName shouldBe "DummyState"
+    }
+
+
 
     "select a card and reveal it" in {
       val board = Board(List(Card("A"), Card("B"), Card("A"), Card("B")))
