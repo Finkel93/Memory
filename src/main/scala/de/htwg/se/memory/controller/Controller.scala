@@ -2,8 +2,18 @@ package de.htwg.se.memory.controller
 
 import de.htwg.se.memory.util.Observable
 import de.htwg.se.memory.model.{Game, Player}
+import de.htwg.se.memory.controller.strategy._
+
+
 
 class Controller(var gameState: Game) extends Observable {
+
+  private var matchStrategy: MatchStrategy = new KeepOpenStrategy // Standardstrategie
+
+  def setMatchStrategy(strategy: MatchStrategy): Unit = {
+    matchStrategy = strategy
+  }
+
   def selectCard(index: Int): Unit = {
     try {
       gameState = gameState.selectCard(index)
@@ -23,29 +33,20 @@ class Controller(var gameState: Game) extends Observable {
       val card2 = gameState.board.cards(idx2)
 
       if (card1.value == card2.value) {
-        // Treffer: Punkt für aktuellen Spieler, Karten bleiben aufgedeckt
-        val current = gameState.players(gameState.currentPlayerIndex)
-        val updatedPlayer = current.addPoint()
-        val updatedPlayers = gameState.players.updated(gameState.currentPlayerIndex, updatedPlayer)
-        gameState = gameState.copy(
-          players = updatedPlayers,
-          selectedIndices = List()  // Auswahl zurücksetzen
-        )
-        notifyObservers
+        matchStrategy.handleMatch(this, idx1, idx2)
       } else {
-        // Kein Treffer: Karten verdecken und Spieler wechseln
-        // Beide Karten wieder verdecken
         val updatedBoard = gameState.board.hideCard(idx1).hideCard(idx2)
         val nextPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.size
         gameState = gameState.copy(
           board = updatedBoard,
           currentPlayerIndex = nextPlayerIndex,
-          selectedIndices = List()  // Auswahl zurücksetzen
+          selectedIndices = List()
         )
+        notifyObservers
       }
-      notifyObservers
     }
   }
+
 
   def isGameOver: Boolean = gameState.isGameOver
   def currentPlayer: Player = gameState.players(gameState.currentPlayerIndex)
