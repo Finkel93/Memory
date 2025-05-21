@@ -3,6 +3,8 @@ package de.htwg.se.memory.view
 import de.htwg.se.memory.util.Observer
 import de.htwg.se.memory.controller.Controller
 import de.htwg.se.memory.model.Game
+import scala.util.{Try, Failure, Success}
+
 
 class Tui(val controller: Controller) extends Observer {
   controller.add(this)
@@ -31,10 +33,18 @@ class Tui(val controller: Controller) extends Observer {
 
   def handleInput(): Unit = {
     if (!controller.isGameOver) {
-      val input = InputHelper.getInput("Karte wählen: ", controller.gameState, () => scala.io.StdIn.readLine())
-      controller.handleInput(input)
+      val inputStr = scala.io.StdIn.readLine("Karte wählen (oder 'u' für Undo, 'r' für Redo): ")
+
+      inputStr match {
+        case "u" => controller.undo()
+        case "r" => controller.redo()
+        case _ =>
+          val input = InputHelper.parseInput(inputStr, controller.gameState)
+          controller.handleInput(input)
+      }
     }
   }
+
 
 
   override def update: Unit = {
@@ -49,18 +59,23 @@ object InputHelper {
       if (!controle) {
         print(prompt)
       }
-      try {
-        val input = readLineFunc().toInt
-        if (isValidInput(input, game)) input
-        else {
-          println("Ungültiger Index oder Karte bereits gewählt. Bitte erneut versuchen.")
-          readValidInput()
-        }
-      } catch {
-        case e: NumberFormatException =>
+
+      Try(readLineFunc().toInt) match {
+        case Success(input) =>
+          if (isValidInput(input.toInt, game)) input.toInt
+          else {
+            println("Ungültiger Index oder Karte bereits gewählt. Bitte erneut versuchen.")
+            readValidInput()
+          }
+
+        case Failure(_: NumberFormatException) =>
           if (controle) {
             println("Bitte eine gültige Zahl eingeben.")
           }
+          readValidInput(true)
+
+        case Failure(e) =>
+          println("Unbekannter Fehler: " + e.getMessage)
           readValidInput(true)
       }
     }
@@ -68,13 +83,23 @@ object InputHelper {
     readValidInput()
   }
 
-  def isValidInput(index: Int, game: Game): Boolean = {
-    val inBounds = index >= 0 && index < game.board.cards.length
-    if(index >=  game.board.cards.length) {
-      return false
+    def parseInput(inputStr: String, game: Game): Int = {
+      val inputTry = Try(inputStr.toInt)
+      inputTry match {
+        case Success(index) if isValidInput(index, game) => index
+        case _ =>
+          println("Ungültige Eingabe. Bitte erneut versuchen.")
+          parseInput(scala.io.StdIn.readLine(), game)
+      }
     }
-    val notRevealed = !game.board.cards(index).isRevealed
-    val notSelected = !game.selectedIndices.contains(index)
-    inBounds && notRevealed && notSelected
+
+
+
+
+  def isValidInput(index: Int, game: Game): Boolean = {
+    index >= 0 &&
+      index < game.board.cards.size &&
+      !game.board.cards(index).isRevealed &&
+      !game.selectedIndices.contains(index)
   }
 }

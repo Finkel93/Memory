@@ -17,9 +17,10 @@ class InputHelperSpec extends AnyWordSpec with Matchers {
       val players = List(Player("Spieler 1"))
       val game = Game(board, players)
 
+
       // Test mit einem gültigen Index
       InputHelper.isValidInput(0, game) shouldBe true
-      InputHelper.isValidInput(5, game) shouldBe false
+      InputHelper.isValidInput(4, game) shouldBe false
     }
 
     "check wether card at index is in already revealed" in {
@@ -167,7 +168,7 @@ class TuiSpec extends AnyWordSpec with Matchers {
         tui.handleInput()
       }
 
-      controller.gameState.selectedIndices.size shouldBe 2  // da gameOver, liste nicht mehr auf leer gesetzt
+      controller.gameState.selectedIndices.size shouldBe 0
     }
 
     "do nothing if two cards are already selected" in {

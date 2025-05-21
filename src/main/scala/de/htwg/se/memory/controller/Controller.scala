@@ -4,6 +4,10 @@ import de.htwg.se.memory.util.Observable
 import de.htwg.se.memory.model.{Game, Player}
 import de.htwg.se.memory.controller.strategy._
 import de.htwg.se.memory.controller.state._
+import scala.util.{Try, Failure}
+import de.htwg.se.memory.controller.command.SetCardCommand
+import de.htwg.se.memory.controller.command.Command
+import scala.collection.mutable
 
 
 
@@ -13,30 +17,58 @@ class Controller(var gameState: Game) extends Observable {
   var matchStrategy: MatchStrategy = new KeepOpenStrategy // Standardstrategie
   var state: GameState = new WaitingFirstCardState
 
-  def setMatchStrategy(strategy: MatchStrategy): Unit = {
-    matchStrategy = strategy
+  private val undoStack: mutable.Stack[Command] = mutable.Stack()
+  private val redoStack: mutable.Stack[Command] = mutable.Stack()
+
+  def executeCommand(command: Command): Unit = {
+    command.doStep()
+    undoStack.push(command)
+    redoStack.clear()
   }
 
+  def undo(): Unit = {
+    if (undoStack.nonEmpty) {
+      val command = undoStack.pop()
+      command.undoStep()
+      redoStack.push(command)
+    }
+  }
+
+  def redo(): Unit = {
+    if (redoStack.nonEmpty) {
+      val command = redoStack.pop()
+      command.redoStep()
+      undoStack.push(command)
+    }
+  }
+
+  /*def setMatchStrategy(strategy: MatchStrategy): Unit = {
+    matchStrategy = strategy
+  }*/
+
   def setState(newState: GameState): Unit = {
-    this.state = newState
+    state = newState
     notifyObservers
   }
+
+
 
   def getStateName: String = state.name
 
   def handleInput(input: Int): Unit = {
-    state.handleInput(input, this)
+    val cmd = new SetCardCommand(input, this)
+    executeCommand(cmd)
   }
 
   def selectCard(index: Int): Unit = {
-    try {
-      gameState = gameState.selectCard(index)
-      notifyObservers
-    } catch {
-      case _: IllegalArgumentException =>
-        throw new IllegalArgumentException("Karte bereits aufgedeckt")
+    if (gameState.board.cards(index).isRevealed) {
+      throw new IllegalArgumentException("Karte bereits aufgedeckt")
     }
+
+    gameState = gameState.selectCard(index)
+    notifyObservers
   }
+
 
   def nextTurn(): Unit = {
     if (gameState.selectedIndices.size == 2) {

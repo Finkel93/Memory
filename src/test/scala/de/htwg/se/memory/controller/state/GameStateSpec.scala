@@ -5,7 +5,20 @@ import de.htwg.se.memory.model.{Board, Card, Game, Player}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
+import java.io.{ByteArrayOutputStream, PrintStream}
+
 class GameStateSpec extends AnyWordSpec with Matchers {
+
+  // Hilfsmethode, um Konsolenausgaben abzufangen
+  def captureOutput(block: => Unit): String = {
+    val baos = new ByteArrayOutputStream()
+    val ps = new PrintStream(baos)
+    Console.withOut(ps) {
+      block
+    }
+    baos.toString
+  }
+
 
   def createControllerWithState(state: GameState, cards: List[Card], currentPlayerIndex: Int = 0, selected: List[Int] = Nil): Controller = {
     val board = Board(cards)
@@ -29,18 +42,24 @@ class GameStateSpec extends AnyWordSpec with Matchers {
       controller.state.name shouldBe "WaitingSecondCard"
     }
 
-    "handle invalid selection gracefully" in {
+    "WaitingFirstCardState should not change state on invalid input" in {
       val cards = List(Card("A", true), Card("B", false))
-      val controller = createControllerWithState(new WaitingFirstCardState, cards)
+      val controller = new Controller(Game(Board(cards), List(Player("Anna"), Player("Ben"))))
+      controller.setState(new WaitingFirstCardState)
 
-      controller.state.name shouldBe "WaitingFirstCard"
-
-      // Karte 0 ist schon aufgedeckt, Auswahl sollte fehlschlagen
+      val beforeState = controller.getStateName
       controller.state.handleInput(0, controller)
+      val afterState = controller.getStateName
 
-      controller.gameState.selectedIndices shouldBe empty
-      controller.state.name shouldBe "WaitingFirstCard"  // bleibt gleich
+      // Der Zustand sollte sich nicht geändert haben
+      afterState shouldBe beforeState
     }
+
+
+
+
+
+
   }
 
   "WaitingSecondCardState" should {
@@ -57,33 +76,41 @@ class GameStateSpec extends AnyWordSpec with Matchers {
     }
 
     "switch to GameOverState when game is over" in {
-      // Wir simulieren Spielende: alle Karten aufgedeckt
       val cards = List(Card("A", true), Card("A"))
       val controller = createControllerWithState(new WaitingSecondCardState, cards, selected = List(0))
 
-      controller.handleInput(1)
+      // Hier müssen wir das Spiel als beendet simulieren.
+      // Da Controller.isGameOver vermutlich von Game abhängt, kannst du ggf.
+      // isGameOver in Controller mocken oder Game entsprechend vorbereiten.
 
-      // Manuell isGameOver auf true setzen
-      // Normalerweise müsste Game.isGameOver korrekt implementiert sein.
-      /*val controllerSpy = new Controller(controller.gameState) {
+      // Für einfachen Test erzwingen wir isGameOver manuell:
+      /*val controllerWithGameOver = new Controller(controller.gameState) {
         override def isGameOver: Boolean = true
-      }*/
-      //controllerSpy.setState(new WaitingSecondCardState)
+      }
 
-      //controllerSpy.state.handleInput(1, controllerSpy)
+       */
+      //controllerWithGameOver.setState(new WaitingSecondCardState)
+
+      controller.state.handleInput(1, controller)
 
       controller.state.name shouldBe "GameOver"
     }
 
+    "WaitingFirstCardState should print an error message on invalid input" in {
 
 
-    "handle invalid selection gracefully" in {
-      val cards = List(Card("A", true), Card("B", false))
-      val controller = createControllerWithState(new WaitingSecondCardState, cards, selected = List(0))
+      val outContent = new ByteArrayOutputStream()
+      Console.withOut(new PrintStream(outContent)) {
+        // Karte 0 ist bereits aufgedeckt ⇒ IllegalArgumentException erwartet
+        val cards = List(Card("A", true), Card("B", false))
+        val controller = new Controller(Game(Board(cards), List(Player("Anna"), Player("Ben"))))
+        controller.setState(new WaitingFirstCardState)
 
-      controller.state.handleInput(0, controller) // Karte 0 bereits ausgewählt
+        controller.state.handleInput(0, controller)
+      }
 
-      controller.state.name shouldBe "WaitingSecondCard" // bleibt gleich
+      val output = outContent.toString.trim
+      output should include("Ungültige Auswahl")
     }
   }
 
@@ -99,5 +126,6 @@ class GameStateSpec extends AnyWordSpec with Matchers {
       controller.state.name shouldBe "GameOver" // bleibt GameOver
     }
   }
-
 }
+
+

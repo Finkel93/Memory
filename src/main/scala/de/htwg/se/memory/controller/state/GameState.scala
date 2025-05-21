@@ -1,6 +1,7 @@
 package de.htwg.se.memory.controller.state
 
 import de.htwg.se.memory.controller.Controller
+import scala.util.{Try, Failure}
 
 // Gemeinsames Interface für alle Spielzustände
 trait GameState {
@@ -10,15 +11,18 @@ trait GameState {
 
 // Zustand: Erwartet erste Kartenwahl
 class WaitingFirstCardState extends GameState {
+  var output = ""
   override def handleInput(input: Int, controller: Controller): Unit = {
-    try {
+    Try {
       controller.selectCard(input)
+    }.map { _ =>
       controller.setState(new WaitingSecondCardState)
-    } catch {
+    }.recover {
       case e: IllegalArgumentException =>
         println("Ungültige Auswahl: " + e.getMessage)
     }
   }
+
 
   override def name: String = "WaitingFirstCard"
 }
@@ -26,7 +30,7 @@ class WaitingFirstCardState extends GameState {
 // Zustand: Erwartet zweite Kartenwahl
 class WaitingSecondCardState extends GameState {
   override def handleInput(input: Int, controller: Controller): Unit = {
-    try {
+    Try {
       controller.selectCard(input)
       controller.nextTurn()
 
@@ -35,7 +39,7 @@ class WaitingSecondCardState extends GameState {
       } else {
         controller.setState(new WaitingFirstCardState)
       }
-    } catch {
+    }.recover {
       case e: IllegalArgumentException =>
         println("Ungültige Auswahl: " + e.getMessage)
     }
@@ -47,7 +51,6 @@ class WaitingSecondCardState extends GameState {
 // Zustand: Spiel ist vorbei
 class GameOverState extends GameState {
   override def handleInput(input: Int, controller: Controller): Unit = {
-
     println("Spiel ist vorbei. Eingabe wird ignoriert.")
   }
 
