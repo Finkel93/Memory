@@ -33,17 +33,23 @@ class Tui(val controller: Controller) extends Observer {
 
   def handleInput(): Unit = {
     if (!controller.isGameOver) {
-      val inputStr = scala.io.StdIn.readLine("Karte wählen (oder 'u' für Undo, 'r' für Redo): ")
+      val inputStr = scala.io.StdIn.readLine("Karte waehlen (oder 'u' fuer Undo, 'r' fuer Redo): ")
 
       inputStr match {
         case "u" => controller.undo()
         case "r" => controller.redo()
         case _ =>
-          val input = InputHelper.parseInput(inputStr, controller.gameState)
-          controller.handleInput(input)
+          InputHelper.parseInput(inputStr, controller.gameState) match {
+            case Some(index) => controller.handleInput(index)
+            case None =>
+              println("Ungueltige Eingabe. Bitte erneut versuchen.")
+              handleInput()
+          }
       }
     }
   }
+
+
 
 
 
@@ -79,22 +85,13 @@ object InputHelper {
           readValidInput(true)
       }
     }
-
     readValidInput()
   }
 
-    def parseInput(inputStr: String, game: Game): Int = {
-      val inputTry = Try(inputStr.toInt)
-      inputTry match {
-        case Success(index) if isValidInput(index, game) => index
-        case _ =>
-          println("Ungültige Eingabe. Bitte erneut versuchen.")
-          parseInput(scala.io.StdIn.readLine(), game)
-      }
-    }
-
-
-
+  def parseInput(inputStr: String, game: Game): Option[Int] = {
+    Try(inputStr.toInt).toOption
+      .filter(index => isValidInput(index, game))
+  }
 
   def isValidInput(index: Int, game: Game): Boolean = {
     index >= 0 &&

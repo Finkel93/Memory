@@ -55,11 +55,20 @@ class GameStateSpec extends AnyWordSpec with Matchers {
       afterState shouldBe beforeState
     }
 
+    "WaitingFirstCardState should print an error message on invalid input" in {
+      val outContent = new ByteArrayOutputStream()
+      Console.withOut(new PrintStream(outContent)) {
+        // Karte 0 ist bereits aufgedeckt ⇒ IllegalArgumentException erwartet
+        val cards = List(Card("A", true), Card("B", false))
+        val controller = new Controller(Game(Board(cards), List(Player("Anna"), Player("Ben"))))
+        controller.setState(new WaitingFirstCardState)
 
+        controller.state.handleInput(0, controller)
+      }
 
-
-
-
+      val output = outContent.toString.trim
+      output should include("Ungültige Auswahl")
+    }
   }
 
   "WaitingSecondCardState" should {
@@ -79,32 +88,19 @@ class GameStateSpec extends AnyWordSpec with Matchers {
       val cards = List(Card("A", true), Card("A"))
       val controller = createControllerWithState(new WaitingSecondCardState, cards, selected = List(0))
 
-      // Hier müssen wir das Spiel als beendet simulieren.
-      // Da Controller.isGameOver vermutlich von Game abhängt, kannst du ggf.
-      // isGameOver in Controller mocken oder Game entsprechend vorbereiten.
-
-      // Für einfachen Test erzwingen wir isGameOver manuell:
-      /*val controllerWithGameOver = new Controller(controller.gameState) {
-        override def isGameOver: Boolean = true
-      }
-
-       */
-      //controllerWithGameOver.setState(new WaitingSecondCardState)
 
       controller.state.handleInput(1, controller)
 
       controller.state.name shouldBe "GameOver"
     }
 
-    "WaitingFirstCardState should print an error message on invalid input" in {
-
-
+    "print an error message on invalid input" in {
       val outContent = new ByteArrayOutputStream()
       Console.withOut(new PrintStream(outContent)) {
         // Karte 0 ist bereits aufgedeckt ⇒ IllegalArgumentException erwartet
         val cards = List(Card("A", true), Card("B", false))
         val controller = new Controller(Game(Board(cards), List(Player("Anna"), Player("Ben"))))
-        controller.setState(new WaitingFirstCardState)
+        controller.setState(new WaitingSecondCardState)
 
         controller.state.handleInput(0, controller)
       }
