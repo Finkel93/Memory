@@ -7,41 +7,27 @@ import de.htwg.se.memory.controller.Controller
 
 class Gui(val controller: Controller, exitCallback: () => Unit) extends MainFrame with Observer {
   controller.add(this)
-  private var waiting = false // Flag ob Timer läuft, damit update nicht mehrfach Timer startet
+
   title = "Memory Game"
   preferredSize = new Dimension(600, 400)
 
-  // Fenster-Schließen-Event
-  override def closeOperation(): Unit = {
-    exitCallback()
-    super.closeOperation()
-  }
-
-  // Status-Label für aktuellen Spieler
+  val leftScoreLabel = new Label("Spieler 1 : 0")
+  val rightScoreLabel = new Label("Spieler 2 : 0")
   val statusLabel = new Label(s"Spieler am Zug: ${controller.currentPlayer.name}")
 
-  // Panel für die Karten
   val cardPanel = new GridPanel(4, 3) {
     border = Swing.EmptyBorder(10)
   }
 
-  // Karten-Buttons erstellen und hinzufügen
-  updateCards()
-
-  // Layout mit StatusLabel oben und Karten darunter
-  contents = new BorderPanel {
-    layout(statusLabel) = BorderPanel.Position.North
-    layout(cardPanel) = BorderPanel.Position.Center
-  }
-
-
   val undoButton = new Button("Undo") {
+    enabled = false
     reactions += {
       case ButtonClicked(_) => controller.undo()
     }
   }
 
   val redoButton = new Button("Redo") {
+    enabled = false
     reactions += {
       case ButtonClicked(_) => controller.redo()
     }
@@ -53,7 +39,11 @@ class Gui(val controller: Controller, exitCallback: () => Unit) extends MainFram
   }
 
   contents = new BorderPanel {
-    layout(statusLabel) = BorderPanel.Position.North
+    layout(new BorderPanel {
+      layout(leftScoreLabel) = BorderPanel.Position.West
+      layout(statusLabel)    = BorderPanel.Position.Center
+      layout(rightScoreLabel)= BorderPanel.Position.East
+    }) = BorderPanel.Position.North
     layout(cardPanel) = BorderPanel.Position.Center
     layout(buttonPanel) = BorderPanel.Position.South
   }
@@ -71,49 +61,40 @@ class Gui(val controller: Controller, exitCallback: () => Unit) extends MainFram
       }
       cardPanel.contents += button
     }
-
-    cardPanel.revalidate() // Layout neu berechnen
-
-    cardPanel.repaint()    // Panel neu zeichnen
+    cardPanel.revalidate()
+    cardPanel.repaint()
   }
-
-
-
-
-  import javax.swing.Timer
-  import java.awt.event.ActionListener
 
   override def update: Unit = {
     Swing.onEDT {
-      statusLabel.text = s"Spieler am Zug: ${controller.currentPlayer.name}"
-      updateCards()
-      repaint()
+      // Update Scores
+      val players = controller.gameState.players
+      val scores = players.map(p => s"${p.name}: ${p.score}")
 
-      if (controller.gameState.selectedIndices.size == 2 && !waiting) {
-        waiting = true
-        val timer = new Timer(1000, null)
-        timer.addActionListener { _ =>
-          controller.nextTurn()
-          waiting = false
-          timer.stop()
-        }
-        timer.setRepeats(false)
-        timer.start()
+      leftScoreLabel.text = scores.headOption.getOrElse("")
+      rightScoreLabel.text = if (scores.size > 1) scores(1) else ""
+
+      // Statusanzeige (Spieler am Zug / Gewinner)
+      if (controller.isGameOver) {
+        val winners = controller.getWinners
+        statusLabel.text =
+          if (winners.size == 1)
+            s"Spiel vorbei! Gewinner: ${winners.head.name}"
+          else
+            s"Spiel vorbei! Unentschieden zwischen: ${winners.map(_.name).mkString(", ")}"
+      } else {
+        statusLabel.text = s"Spieler am Zug: ${controller.currentPlayer.name}"
       }
+
+      undoButton.enabled = controller.canUndo
+      redoButton.enabled = controller.canRedo
+
+      updateCards()
     }
   }
 
-
-
-
-
-  def spinWait(ms: Long): Unit = {
-    val start = System.currentTimeMillis()
-    while (System.currentTimeMillis() - start < ms) {
-      // Spin wait - tut nichts außer Zeit abwarten
-    }
-  }
-
+  // Initialisierung
+  updateCards()
   pack()
   centerOnScreen()
 }
