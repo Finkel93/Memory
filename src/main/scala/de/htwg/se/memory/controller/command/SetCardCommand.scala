@@ -9,7 +9,7 @@ class SetCardCommand(index: Int, controller: Controller) extends Command {
   override def doStep(): Unit = {
     previousState = controller.gameState
     controller.selectCard(index)
-    controller.nextTurn() // WICHTIG: nach der Auswahl, falls 2 Karten gewählt sind
+    controller.nextTurn()
   }
 
   override def undoStep(): Unit = {
@@ -18,6 +18,7 @@ class SetCardCommand(index: Int, controller: Controller) extends Command {
   }
 
   override def redoStep(): Unit = {
+    controller.gameState = previousState
     controller.selectCard(index)
     controller.nextTurn()
   }

@@ -7,7 +7,7 @@ import de.htwg.se.memory.controller.Controller
 
 class Gui(val controller: Controller, exitCallback: () => Unit) extends MainFrame with Observer {
   controller.add(this)
-
+  private var waiting = false // Flag ob Timer läuft, damit update nicht mehrfach Timer startet
   title = "Memory Game"
   preferredSize = new Dimension(600, 400)
 
@@ -34,24 +34,54 @@ class Gui(val controller: Controller, exitCallback: () => Unit) extends MainFram
     layout(cardPanel) = BorderPanel.Position.Center
   }
 
+
+  val undoButton = new Button("Undo") {
+    reactions += {
+      case ButtonClicked(_) => controller.undo()
+    }
+  }
+
+  val redoButton = new Button("Redo") {
+    reactions += {
+      case ButtonClicked(_) => controller.redo()
+    }
+  }
+
+  val buttonPanel = new FlowPanel {
+    contents += undoButton
+    contents += redoButton
+  }
+
+  contents = new BorderPanel {
+    layout(statusLabel) = BorderPanel.Position.North
+    layout(cardPanel) = BorderPanel.Position.Center
+    layout(buttonPanel) = BorderPanel.Position.South
+  }
+
   private def updateCards(): Unit = {
     cardPanel.contents.clear()
-
     controller.gameState.board.cards.zipWithIndex.foreach { case (card, idx) =>
       val button = new Button {
         text = if (card.isRevealed) card.value.toString else "?"
         enabled = !card.isRevealed
       }
       button.reactions += {
-        case ButtonClicked(_) => controller.handleInput(idx)
+        case ButtonClicked(_) =>
+          controller.handleInput(idx)
       }
       cardPanel.contents += button
     }
 
     cardPanel.revalidate() // Layout neu berechnen
+
     cardPanel.repaint()    // Panel neu zeichnen
   }
 
+
+
+
+  import javax.swing.Timer
+  import java.awt.event.ActionListener
 
   override def update: Unit = {
     Swing.onEDT {
@@ -59,20 +89,30 @@ class Gui(val controller: Controller, exitCallback: () => Unit) extends MainFram
       updateCards()
       repaint()
 
-      // Prüfe ob zwei Karten aufgedeckt sind
-      if (controller.gameState.selectedIndices.size == 2) {
-        // Verzögerung von 1 Sekunde, bevor nextTurn aufgerufen wird
-        val timer = new javax.swing.Timer(1000, new java.awt.event.ActionListener {
-          override def actionPerformed(e: java.awt.event.ActionEvent): Unit = {
-            controller.nextTurn()
-          }
-        })
+      if (controller.gameState.selectedIndices.size == 2 && !waiting) {
+        waiting = true
+        val timer = new Timer(1000, null)
+        timer.addActionListener { _ =>
+          controller.nextTurn()
+          waiting = false
+          timer.stop()
+        }
         timer.setRepeats(false)
         timer.start()
       }
     }
   }
 
+
+
+
+
+  def spinWait(ms: Long): Unit = {
+    val start = System.currentTimeMillis()
+    while (System.currentTimeMillis() - start < ms) {
+      // Spin wait - tut nichts außer Zeit abwarten
+    }
+  }
 
   pack()
   centerOnScreen()

@@ -72,6 +72,7 @@ class Controller(var gameState: Game) extends Observable {
 
   def nextTurn(): Unit = {
     if (gameState.selectedIndices.size == 2) {
+
       val idx1 = gameState.selectedIndices(0)
       val idx2 = gameState.selectedIndices(1)
 
@@ -82,17 +83,26 @@ class Controller(var gameState: Game) extends Observable {
         matchStrategy.handleMatch(this, idx1, idx2)
       } else {
         val updatedBoard = gameState.board.hideCard(idx1).hideCard(idx2)
+
         val nextPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.size
+
         gameState = gameState.copy(
           board = updatedBoard,
           currentPlayerIndex = nextPlayerIndex,
           selectedIndices = List()
         )
+
         notifyObservers
       }
     }
   }
 
+  def spinWait(ms: Long): Unit = {
+    val start = System.currentTimeMillis()
+    while (System.currentTimeMillis() - start < ms) {
+      // Spin wait - tut nichts außer Zeit abwarten
+    }
+  }
   def isPairSelected: Boolean = gameState.selectedIndices.size == 2
   def isGameOver: Boolean = gameState.isGameOver
   def currentPlayer: Player = gameState.players(gameState.currentPlayerIndex)
