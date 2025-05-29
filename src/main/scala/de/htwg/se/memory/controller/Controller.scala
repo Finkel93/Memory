@@ -93,7 +93,7 @@ class Controller(var gameState: Game) extends Observable {
     }
   }
 
-
+  def isPairSelected: Boolean = gameState.selectedIndices.size == 2
   def isGameOver: Boolean = gameState.isGameOver
   def currentPlayer: Player = gameState.players(gameState.currentPlayerIndex)
   def boardView: String = gameState.board.displayCards(gameState.board.cards)

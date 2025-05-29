@@ -36,6 +36,7 @@ class Gui(val controller: Controller, exitCallback: () => Unit) extends MainFram
 
   private def updateCards(): Unit = {
     cardPanel.contents.clear()
+
     controller.gameState.board.cards.zipWithIndex.foreach { case (card, idx) =>
       val button = new Button {
         text = if (card.isRevealed) card.value.toString else "?"
@@ -46,15 +47,32 @@ class Gui(val controller: Controller, exitCallback: () => Unit) extends MainFram
       }
       cardPanel.contents += button
     }
+
+    cardPanel.revalidate() // Layout neu berechnen
+    cardPanel.repaint()    // Panel neu zeichnen
   }
+
 
   override def update: Unit = {
     Swing.onEDT {
       statusLabel.text = s"Spieler am Zug: ${controller.currentPlayer.name}"
       updateCards()
       repaint()
+
+      // Prüfe ob zwei Karten aufgedeckt sind
+      if (controller.gameState.selectedIndices.size == 2) {
+        // Verzögerung von 1 Sekunde, bevor nextTurn aufgerufen wird
+        val timer = new javax.swing.Timer(1000, new java.awt.event.ActionListener {
+          override def actionPerformed(e: java.awt.event.ActionEvent): Unit = {
+            controller.nextTurn()
+          }
+        })
+        timer.setRepeats(false)
+        timer.start()
+      }
     }
   }
+
 
   pack()
   centerOnScreen()
