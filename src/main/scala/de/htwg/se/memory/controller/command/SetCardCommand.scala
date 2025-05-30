@@ -1,14 +1,15 @@
 package de.htwg.se.memory.controller.command
 
-import de.htwg.se.memory.controller.command._
 import de.htwg.se.memory.controller.Controller
 
 class SetCardCommand(index: Int, controller: Controller) extends Command {
   private var previousState = controller.gameState
+  private var newState = controller.gameState
 
   override def doStep(): Unit = {
     previousState = controller.gameState
     controller.selectCard(index)
+    newState = controller.gameState
   }
 
   override def undoStep(): Unit = {
@@ -17,7 +18,7 @@ class SetCardCommand(index: Int, controller: Controller) extends Command {
   }
 
   override def redoStep(): Unit = {
-    controller.gameState = previousState
-    controller.selectCard(index)
+    controller.gameState = newState
+    controller.notifyObservers
   }
 }

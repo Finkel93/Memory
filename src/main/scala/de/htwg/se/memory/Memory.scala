@@ -25,7 +25,7 @@ object Memory {
     val tui = new Tui(controller)
     tui.start()
 
-    // TUI-Eingabelogik in einem eigenen Thread ausführen
+
     Future {
       while (running && !controller.isGameOver) {
         val input = scala.io.StdIn.readLine()
@@ -37,7 +37,7 @@ object Memory {
       }
     }
 
-    // Hauptthread blockieren, bis das Spiel vorbei ist
+
     while (running) {
       Thread.sleep(100)
     }
