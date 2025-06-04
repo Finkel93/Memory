@@ -9,51 +9,6 @@ import scala.util.{Failure, Success, Try}
 
 import scala.swing._
 
-/*
-class Tui(val controller: Controller) extends Observer {
-  controller.add(this)
-
-  def run(): Unit = {
-    println("Willkommen beim Memory-Spiel!")
-    println("\n" + controller.boardView)
-    gameLoop()
-    println("Spiel beendet.")
-    val winners = controller.getWinners
-    println(controller.gameState.printResult(winners))
-  }
-
-  @tailrec
-  private def gameLoop(): Unit = {
-    if (!controller.isGameOver) {
-      displayGame()
-      handleInput()
-      gameLoop()
-    }
-  }
-
-  def displayGame(): Unit = {
-
-    println(s"Spieler am Zug: ${controller.currentPlayer.name}")
-  }
-
-  def handleInput(): Unit = {
-    if (!controller.isGameOver) {
-      val inputStr = scala.io.StdIn.readLine("Karte waehlen (oder 'u' fuer Undo, 'r' fuer Redo): ")
-
-      inputStr match {
-        case "u" => controller.undo()
-        case "r" => controller.redo()
-        case _ =>
-          InputHelper.parseInput(inputStr, controller.gameState) match {
-            case Some(index) => controller.handleInput(index)
-            case None =>
-              println("Ungueltige Eingabe. Bitte erneut versuchen.")
-              handleInput()
-          }
-      }
-    }
-  }
-  */
 class Tui(val controller: Controller) extends Observer {
   controller.add(this)
 

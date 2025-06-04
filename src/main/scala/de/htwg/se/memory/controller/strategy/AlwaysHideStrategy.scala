@@ -6,11 +6,12 @@ class AlwaysHideStrategy extends MatchStrategy {
     val updatedBoard = controller.gameState.board.hideCard(idx1).hideCard(idx2)
     val nextPlayerIndex = (controller.gameState.currentPlayerIndex + 1) % controller.gameState.players.size
 
-    controller.gameState = controller.gameState.copy(
+    val newGameState = controller.gameState.copy(
       board = updatedBoard,
       currentPlayerIndex = nextPlayerIndex,
       selectedIndices = List()
     )
-    controller.notifyObservers
+
+    controller.updateGameState(newGameState)
   }
 }

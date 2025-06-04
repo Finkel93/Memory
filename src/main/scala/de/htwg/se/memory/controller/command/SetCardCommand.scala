@@ -13,12 +13,12 @@ class SetCardCommand(index: Int, controller: Controller) extends Command {
   }
 
   override def undoStep(): Unit = {
-    controller.gameState = previousState
+    controller.updateGameState(previousState)
     controller.notifyObservers
   }
 
   override def redoStep(): Unit = {
-    controller.gameState = newState
+    controller.updateGameState(newState)
     controller.notifyObservers
   }
 }

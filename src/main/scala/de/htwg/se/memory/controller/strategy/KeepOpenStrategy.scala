@@ -6,11 +6,13 @@ class KeepOpenStrategy extends MatchStrategy {
     val current = controller.gameState.players(controller.gameState.currentPlayerIndex)
     val updatedPlayer = current.addPoint()
     val updatedPlayers = controller.gameState.players.updated(controller.gameState.currentPlayerIndex, updatedPlayer)
-
-    controller.gameState = controller.gameState.copy(
+    print("strategy")
+    val newGameState = controller.gameState.copy(
       players = updatedPlayers,
       selectedIndices = List()
     )
-    controller.notifyObservers
+
+    controller.updateGameState(newGameState)
+    // notifyObservers is handled by the event system, so you can remove this line
   }
 }

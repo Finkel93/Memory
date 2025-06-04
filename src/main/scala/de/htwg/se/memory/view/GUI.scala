@@ -69,7 +69,11 @@ class Gui(val controller: Controller, exitCallback: () => Unit) extends MainFram
     Swing.onEDT {
       // Update Scores
       val players = controller.gameState.players
+      print("players")
+      print(players)
       val scores = players.map(p => s"${p.name}: ${p.score}")
+      print("scores")
+      print(scores)
 
       leftScoreLabel.text = scores.headOption.getOrElse("")
       rightScoreLabel.text = if (scores.size > 1) scores(1) else ""
