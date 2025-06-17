@@ -1,7 +1,12 @@
-import de.htwg.se.memory.factory._
-import de.htwg.se.memory.model._
-import de.htwg.se.memory.controller.{Controller, ControllerInterface}
-import de.htwg.se.memory.view.{Tui, Gui}
+// Datei: Memory.scala
+package de.htwg.se.memory
+
+import com.google.inject.Guice
+import net.codingwell.scalaguice.InjectorExtensions._
+
+import de.htwg.se.memory.controller.ControllerInterface
+import de.htwg.se.memory.view._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -9,32 +14,22 @@ object Memory {
   @volatile private var running = true
 
   def main(args: Array[String]): Unit = {
-    // Spiel vorbereiten
-    val factory = new DynamicCardSetFactory(6)
-    val cards = factory.createCards()
-    val board = Board(cards)
-    val players = List(Player("Spieler 1"), Player("Spieler 2"))
-    val game = Game(board, players)
+    val injector = Guice.createInjector(new ControllerModule())
+    val controller = injector.instance[ControllerInterface]
 
-    // Controller als Interface deklarieren
-    val controller: ControllerInterface = new Controller(game)
+    val guiProvider = injector.instance[GuiProvider]
+    guiProvider.setExitCallback(() => running = false)
 
-    // GUI anzeigen
-    val gui = new Gui(controller, () => running = false)
+    val gui = injector.instance[Gui]
     gui.visible = true
 
-    // TUI starten
-    val tui = new Tui(controller)
+    val tui = injector.instance[Tui]
     tui.start()
 
     Future {
       while (running && !controller.isGameOver) {
         val input = scala.io.StdIn.readLine()
-        if (input == "q") {
-          running = false
-        } else {
-          tui.handleInput(input)
-        }
+        if (input == "q") running = false else tui.handleInput(input)
       }
     }
 

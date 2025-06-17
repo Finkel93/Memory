@@ -4,10 +4,11 @@ import scala.swing._
 import scala.swing.event._
 import de.htwg.se.memory.util.Observer
 import de.htwg.se.memory.controller.ControllerInterface
+import com.google.inject.Inject
 
-class Gui(val controller: ControllerInterface, exitCallback: () => Unit) extends MainFrame with Observer {
-  controller.add(this)  // Falls add() in ControllerInterface definiert ist, sonst hier anpassen
-
+class Gui @Inject() (val controller: ControllerInterface, exitCallback: () => Unit)
+  extends MainFrame with Observer {
+  controller.add(this)
   title = "Memory Game"
   preferredSize = new Dimension(600, 400)
 

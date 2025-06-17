@@ -5,8 +5,9 @@ import de.htwg.se.memory.controller.ControllerInterface
 import de.htwg.se.memory.model.ModelInterface
 
 import scala.util.{Failure, Success, Try}
+import com.google.inject.Inject
 
-class Tui(val controller: ControllerInterface) extends Observer {
+class Tui @Inject()(val controller: ControllerInterface) extends Observer {
   controller.add(this)
 
   def start(): Unit = {

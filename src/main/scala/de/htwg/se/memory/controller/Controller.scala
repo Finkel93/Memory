@@ -11,9 +11,9 @@ import javax.swing.Timer
 import java.awt.event.ActionListener
 import java.awt.event.ActionEvent
 import de.htwg.se.memory.util.Observer
+import com.google.inject.Inject
 
-class Controller(var gameState: ModelInterface) extends ControllerInterface with Observable{
-
+class Controller @Inject() (var gameState: ModelInterface) extends ControllerInterface with Observable {
   var matchStrategy: MatchStrategy = new KeepOpenStrategy
   var state: GameState = new WaitingFirstCardState
 
