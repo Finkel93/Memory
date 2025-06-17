@@ -1,56 +1,55 @@
 package de.htwg.se.memory.controller
 
 import de.htwg.se.memory.util.Observable
-import de.htwg.se.memory.model.{Game, Player}
+import de.htwg.se.memory.model.ModelInterface
+import de.htwg.se.memory.model.PlayerInterface
 import de.htwg.se.memory.controller.strategy._
 import de.htwg.se.memory.controller.state._
 import de.htwg.se.memory.controller.command._
-import de.htwg.se.memory.controller.components._
-import de.htwg.se.memory.controller.components.impl._
+import scala.collection.mutable
+import javax.swing.Timer
+import java.awt.event.ActionListener
+import java.awt.event.ActionEvent
+import de.htwg.se.memory.util.Observer
 
-// Facade Pattern - Vereinfacht die Nutzung der Components
-class Controller(initialGameState: Game) extends Observable with EventListener {
+class Controller(var gameState: ModelInterface) extends ControllerInterface with Observable{
 
-  // Legacy fields for backward compatibility
   var matchStrategy: MatchStrategy = new KeepOpenStrategy
   var state: GameState = new WaitingFirstCardState
 
-  // Layered Components - Components inside Components
-  private val timerManager: TimerManager = new TimerManagerImpl()
-  private val commandManager: CommandManager = new CommandManagerImpl()
-  private val gameStateManager: GameStateManager = new GameStateManagerImpl(initialGameState)
-  private val gameFlowOrchestrator: GameFlowOrchestrator =
-    new GameFlowOrchestratorImpl(gameStateManager, timerManager, commandManager, this)
+  private val undoStack: mutable.Stack[Command] = mutable.Stack()
+  private val redoStack: mutable.Stack[Command] = mutable.Stack()
 
-  // Setup event subscriptions for loose coupling
-  commandManager.subscribe(this)
-  gameStateManager.subscribe(this)
+  var hideCardsTimer: Option[Timer] = None
+  private val CARD_DISPLAY_DURATION = 2000 // 2 Sekunden
 
-  // Event handling
-  override def onEvent(event: ComponentEvent): Unit = {
-    event match {
-      case StateChangedEvent | GameUpdatedEvent =>
-        notifyObservers
-      case _ =>
-    }
-  }
-
-  // Public API - bleibt unverändert für Kompatibilität
   def executeCommand(command: Command): Unit = {
-    commandManager.executeCommand(command)
+    command.doStep()
+    undoStack.push(command)
+    redoStack.clear()
     notifyObservers
   }
 
   def undo(): Unit = {
-    commandManager.undo()
+    if (undoStack.nonEmpty) {
+      val command = undoStack.pop()
+      command.undoStep()
+      redoStack.push(command)
+      notifyObservers
+    }
   }
 
   def redo(): Unit = {
-    commandManager.redo()
+    if (redoStack.nonEmpty) {
+      val command = redoStack.pop()
+      command.redoStep()
+      undoStack.push(command)
+      notifyObservers
+    }
   }
 
-  def canUndo: Boolean = commandManager.canUndo
-  def canRedo: Boolean = commandManager.canRedo
+  def canUndo: Boolean = undoStack.nonEmpty
+  def canRedo: Boolean = redoStack.nonEmpty
 
   def setState(newState: GameState): Unit = {
     state = newState
@@ -60,33 +59,94 @@ class Controller(initialGameState: Game) extends Observable with EventListener {
   def getStateName: String = state.name
 
   def handleInput(input: Int): Unit = {
-    gameFlowOrchestrator.handleCardSelection(input)
+    if (hideCardsTimer.exists(_.isRunning)) {
+      hideCardsTimer.foreach(_.stop())
+      hideCardsTimer = None
+      nextTurn()
+    }
+
+    if (gameState.selectedIndices.size == 2) {
+      val idx1 = gameState.selectedIndices(0)
+      val idx2 = gameState.selectedIndices(1)
+      val card1 = gameState.board.cards(idx1)
+      val card2 = gameState.board.cards(idx2)
+
+      if (card1.value != card2.value) {
+        nextTurn()
+      }
+    }
+
+    val cmd = new SetCardCommand(input, this)
+    executeCommand(cmd)
+
+    if (gameState.selectedIndices.size == 2) {
+      val idx1 = gameState.selectedIndices(0)
+      val idx2 = gameState.selectedIndices(1)
+      val card1 = gameState.board.cards(idx1)
+      val card2 = gameState.board.cards(idx2)
+
+      if (card1.value != card2.value) {
+        startHideCardsTimer()
+      } else {
+        nextTurn()
+      }
+    }
+  }
+
+  def startHideCardsTimer(): Unit = {
+    hideCardsTimer.foreach(_.stop())
+    hideCardsTimer = Some(new Timer(CARD_DISPLAY_DURATION, new ActionListener {
+      override def actionPerformed(e: java.awt.event.ActionEvent): Unit = {
+        nextTurn()
+        hideCardsTimer.foreach(_.stop())
+        hideCardsTimer = None
+      }
+    }))
+    hideCardsTimer.foreach { t =>
+      t.setRepeats(false)
+      t.start()
+    }
   }
 
   def selectCard(index: Int): Unit = {
-    gameStateManager.selectCard(index)
+    if (gameState.board.cards(index).isRevealed) {
+      throw new IllegalArgumentException("Karte bereits aufgedeckt")
+    }
+    gameState = gameState.selectCard(index)
+    notifyObservers
   }
 
   def nextTurn(): Unit = {
-    gameStateManager.nextTurn()
+    if (gameState.selectedIndices.size == 2) {
+      val idx1 = gameState.selectedIndices(0)
+      val idx2 = gameState.selectedIndices(1)
+
+      val card1 = gameState.board.cards(idx1)
+      val card2 = gameState.board.cards(idx2)
+
+      if (card1.value == card2.value) {
+        matchStrategy.handleMatch(this, idx1, idx2)
+      } else {
+        val updatedBoard = gameState.board.hideCard(idx1).hideCard(idx2)
+        val nextPlayerIndex = (gameState.currentPlayerIndex + 1) % gameState.players.size
+
+        gameState = gameState.update(
+          board = updatedBoard,
+          currentPlayerIndex = nextPlayerIndex,
+          selectedIndices = List()
+        )
+      }
+      notifyObservers
+    }
   }
 
-  // Getters - delegieren an Components
-  def isPairSelected: Boolean = gameStateManager.isPairSelected
-  def isGameOver: Boolean = gameStateManager.isGameOver
-  def currentPlayer: Player = gameStateManager.currentPlayer
-  def boardView: String = {
-    val gameState = gameStateManager.getGameState
-    gameState.board.displayCards(gameState.board.cards)
-  }
-  def getWinners: List[Player] = gameStateManager.getWinners
+  def isGameOver: Boolean = gameState.isGameOver
+  def currentPlayer: PlayerInterface = gameState.players(gameState.currentPlayerIndex)
+  def boardView: String = gameState.board.displayCards(gameState.board.cards)
+  def getWinners: List[PlayerInterface] = gameState.getWinners
 
-  // Getter für aktuellen GameState
-  def gameState: Game = gameStateManager.getGameState
-
-  def updateGameState(newState: Game): Unit = {
-    gameStateManager.updateGameState(newState)
-    notifyObservers
-    // notifyObservers is already called by the event system
+  override def add(observer: Observer): Unit = {
+    super[Observable].add(observer)  // Expliziter Aufruf der add-Methode von Observable
   }
+  override def notifyObservers: Unit = super.notifyObservers
 }

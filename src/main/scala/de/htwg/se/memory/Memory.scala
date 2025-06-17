@@ -1,6 +1,6 @@
 import de.htwg.se.memory.factory._
 import de.htwg.se.memory.model._
-import de.htwg.se.memory.controller.Controller
+import de.htwg.se.memory.controller.{Controller, ControllerInterface}
 import de.htwg.se.memory.view.{Tui, Gui}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -15,7 +15,9 @@ object Memory {
     val board = Board(cards)
     val players = List(Player("Spieler 1"), Player("Spieler 2"))
     val game = Game(board, players)
-    val controller = new Controller(game)
+
+    // Controller als Interface deklarieren
+    val controller: ControllerInterface = new Controller(game)
 
     // GUI anzeigen
     val gui = new Gui(controller, () => running = false)
@@ -24,7 +26,6 @@ object Memory {
     // TUI starten
     val tui = new Tui(controller)
     tui.start()
-
 
     Future {
       while (running && !controller.isGameOver) {
@@ -36,7 +37,6 @@ object Memory {
         }
       }
     }
-
 
     while (running) {
       Thread.sleep(100)

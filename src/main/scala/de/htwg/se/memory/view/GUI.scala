@@ -3,10 +3,10 @@ package de.htwg.se.memory.view
 import scala.swing._
 import scala.swing.event._
 import de.htwg.se.memory.util.Observer
-import de.htwg.se.memory.controller.Controller
+import de.htwg.se.memory.controller.ControllerInterface
 
-class Gui(val controller: Controller, exitCallback: () => Unit) extends MainFrame with Observer {
-  controller.add(this)
+class Gui(val controller: ControllerInterface, exitCallback: () => Unit) extends MainFrame with Observer {
+  controller.add(this)  // Falls add() in ControllerInterface definiert ist, sonst hier anpassen
 
   title = "Memory Game"
   preferredSize = new Dimension(600, 400)
@@ -67,18 +67,12 @@ class Gui(val controller: Controller, exitCallback: () => Unit) extends MainFram
 
   override def update: Unit = {
     Swing.onEDT {
-      // Update Scores
       val players = controller.gameState.players
-      print("players")
-      print(players)
       val scores = players.map(p => s"${p.name}: ${p.score}")
-      print("scores")
-      print(scores)
 
       leftScoreLabel.text = scores.headOption.getOrElse("")
       rightScoreLabel.text = if (scores.size > 1) scores(1) else ""
 
-      // Statusanzeige (Spieler am Zug / Gewinner)
       if (controller.isGameOver) {
         val winners = controller.getWinners
         statusLabel.text =
@@ -97,7 +91,6 @@ class Gui(val controller: Controller, exitCallback: () => Unit) extends MainFram
     }
   }
 
-  // Initialisierung
   updateCards()
   pack()
   centerOnScreen()

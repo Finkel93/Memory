@@ -1,23 +1,18 @@
 package de.htwg.se.memory.view
 
 import de.htwg.se.memory.util.Observer
-import de.htwg.se.memory.controller.Controller
-import de.htwg.se.memory.model.Game
+import de.htwg.se.memory.controller.ControllerInterface
+import de.htwg.se.memory.model.ModelInterface
 
-import scala.annotation.tailrec
 import scala.util.{Failure, Success, Try}
 
-import scala.swing._
-
-class Tui(val controller: Controller) extends Observer {
+class Tui(val controller: ControllerInterface) extends Observer {
   controller.add(this)
 
   def start(): Unit = {
     println("Willkommen beim Memory-Spiel!")
     println("\n" + controller.boardView)
     displayGame()
-
-    // Eingabeaufforderung anzeigen
     println("Karte waehlen (oder 'u' fuer Undo, 'r' fuer Redo): ")
   }
 
@@ -36,7 +31,6 @@ class Tui(val controller: Controller) extends Observer {
             println("Ungueltige Eingabe. Bitte erneut versuchen.")
         }
     }
-    // Neue Eingabeaufforderung anzeigen
     if (!controller.isGameOver) {
       println("Karte waehlen (oder 'u' fuer Undo, 'r' fuer Redo): ")
     }
@@ -54,46 +48,45 @@ class Tui(val controller: Controller) extends Observer {
   }
 }
 
-
-    object InputHelper {
-    def getInput(prompt: String, game: Game, readLineFunc: () => String): Int = {
-      def readValidInput(controle: Boolean = false): Int = {
-        if (!controle) {
-          print(prompt)
-        }
-
-        Try(readLineFunc().toInt) match {
-          case Success(input) =>
-            if (isValidInput(input.toInt, game)) input.toInt
-            else {
-              println("Ungültiger Index oder Karte bereits gewählt. Bitte erneut versuchen.")
-              readValidInput()
-            }
-
-          case Failure(_: NumberFormatException) =>
-            if (controle) {
-              println("Bitte eine gültige Zahl eingeben.")
-            }
-            readValidInput(true)
-
-          case Failure(e) =>
-            println("Unbekannter Fehler: " + e.getMessage)
-            readValidInput(true)
-        }
+object InputHelper {
+  def getInput(prompt: String, game: ModelInterface, readLineFunc: () => String): Int = {
+    def readValidInput(controle: Boolean = false): Int = {
+      if (!controle) {
+        print(prompt)
       }
 
-      readValidInput()
+      Try(readLineFunc().toInt) match {
+        case Success(input) =>
+          if (isValidInput(input.toInt, game)) input.toInt
+          else {
+            println("Ungültiger Index oder Karte bereits gewählt. Bitte erneut versuchen.")
+            readValidInput()
+          }
+
+        case Failure(_: NumberFormatException) =>
+          if (controle) {
+            println("Bitte eine gültige Zahl eingeben.")
+          }
+          readValidInput(true)
+
+        case Failure(e) =>
+          println("Unbekannter Fehler: " + e.getMessage)
+          readValidInput(true)
+      }
     }
 
-    def parseInput(inputStr: String, game: Game): Option[Int] = {
-      Try(inputStr.toInt).toOption
-        .filter(index => isValidInput(index, game))
-    }
-
-    def isValidInput(index: Int, game: Game): Boolean = {
-      index >= 0 &&
-        index < game.board.cards.size &&
-        !game.board.cards(index).isRevealed &&
-        !game.selectedIndices.contains(index)
-    }
+    readValidInput()
   }
+
+  def parseInput(inputStr: String, game: ModelInterface): Option[Int] = {
+    Try(inputStr.toInt).toOption
+      .filter(index => isValidInput(index, game))
+  }
+
+  def isValidInput(index: Int, game: ModelInterface): Boolean = {
+    index >= 0 &&
+      index < game.board.cards.size &&
+      !game.board.cards(index).isRevealed &&
+      !game.selectedIndices.contains(index)
+  }
+}

@@ -1,6 +1,6 @@
 package de.htwg.se.memory.model
 
-case class Board(cards: List[Card]) {
+case class Board (cards: List[CardInterface]) extends BoardInterface{
   def revealCard(index: Int): Board = {
     if (cards(index).isRevealed) {
       throw new IllegalArgumentException();
@@ -20,7 +20,7 @@ case class Board(cards: List[Card]) {
   def isGameOver: Boolean = cards.forall(_.isRevealed)
 
 
-  def displayCards(cards: List[Card]): String = {
+  def displayCards(cards: List[CardInterface]): String = {
     val sb = new StringBuilder()
     for (i <- cards.indices) {
       val card = cards(i)
