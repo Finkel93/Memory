@@ -12,8 +12,11 @@ import java.awt.event.ActionListener
 import java.awt.event.ActionEvent
 import de.htwg.se.memory.util.Observer
 import com.google.inject.Inject
+import de.htwg.se.memory.model.fileIO.FileIOInterface
 
-class Controller @Inject() (var gameState: ModelInterface) extends ControllerInterface with Observable {
+class Controller @Inject()(var gameState: ModelInterface, fileIO: FileIOInterface)
+  extends ControllerInterface with Observable {
+
   var matchStrategy: MatchStrategy = new KeepOpenStrategy
   var state: GameState = new WaitingFirstCardState
 
@@ -22,6 +25,17 @@ class Controller @Inject() (var gameState: ModelInterface) extends ControllerInt
 
   var hideCardsTimer: Option[Timer] = None
   private val CARD_DISPLAY_DURATION = 2000 // 2 Sekunden
+
+  def saveGame(): Unit = {
+    fileIO.save(gameState.asInstanceOf[ModelInterface])  // Typumwandlung ggf. erforderlich
+  }
+
+  def loadGame(): Unit = {
+    gameState = fileIO.load()
+    notifyObservers
+  }
+
+
 
   def executeCommand(command: Command): Unit = {
     command.doStep()

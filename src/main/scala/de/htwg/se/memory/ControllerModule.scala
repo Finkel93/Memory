@@ -5,6 +5,9 @@ import com.google.inject.AbstractModule
 import com.google.inject.Scopes
 import net.codingwell.scalaguice.ScalaModule
 import de.htwg.se.memory.model.{ModelInterface, Game, Player, Board}
+import de.htwg.se.memory.model.fileIO.FileIOInterface
+import de.htwg.se.memory.model.fileIO.json.FileIOJson
+import de.htwg.se.memory.model.fileIO.xml.FileIOXML
 import de.htwg.se.memory.factory.DynamicCardSetFactory
 import de.htwg.se.memory.controller.ControllerInterface
 import de.htwg.se.memory.controller.Controller
@@ -23,6 +26,8 @@ class ControllerModule extends AbstractModule with ScalaModule {
     bind[ControllerInterface].to[Controller].in(Scopes.SINGLETON)
     bind(classOf[Gui]).toProvider(classOf[GuiProvider])
     bind(classOf[Tui])
+
+    bind[FileIOInterface].to[FileIOXML]  //to[FileIOJson]
   }
 }
 

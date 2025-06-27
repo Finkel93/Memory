@@ -34,9 +34,27 @@ class Gui @Inject() (val controller: ControllerInterface, exitCallback: () => Un
     }
   }
 
+  val saveButton = new Button("Save") {
+    reactions += {
+      case ButtonClicked(_) =>
+        controller.saveGame()
+        Dialog.showMessage(this, "Spielstand gespeichert.", title="Save")
+    }
+  }
+
+  val loadButton = new Button("Load") {
+    reactions += {
+      case ButtonClicked(_) =>
+        controller.loadGame()
+        Dialog.showMessage(this, "Spielstand geladen.", title="Load")
+    }
+  }
+
   val buttonPanel = new FlowPanel {
     contents += undoButton
     contents += redoButton
+    contents += saveButton
+    contents += loadButton
   }
 
   contents = new BorderPanel {

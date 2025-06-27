@@ -37,4 +37,7 @@ trait ControllerInterface {
 
   def startHideCardsTimer(): Unit
 
+  def loadGame(): Unit
+  def saveGame(): Unit
+
 }
