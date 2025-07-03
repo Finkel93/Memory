@@ -1,48 +1,18 @@
 {
   "players" : [ {
-    "name" : "Spieler 1",
-    "score" : 0
+    "name" : "Alice",
+    "score" : 1
   }, {
-    "name" : "Spieler 2",
-    "score" : 0
+    "name" : "Bob",
+    "score" : 2
   } ],
   "cards" : [ {
-    "value" : "B",
-    "isRevealed" : false
-  }, {
-    "value" : "C",
-    "isRevealed" : false
-  }, {
-    "value" : "D",
-    "isRevealed" : false
-  }, {
-    "value" : "D",
-    "isRevealed" : false
-  }, {
-    "value" : "E",
-    "isRevealed" : false
-  }, {
-    "value" : "C",
-    "isRevealed" : false
-  }, {
     "value" : "A",
     "isRevealed" : false
   }, {
     "value" : "B",
     "isRevealed" : true
-  }, {
-    "value" : "A",
-    "isRevealed" : false
-  }, {
-    "value" : "F",
-    "isRevealed" : false
-  }, {
-    "value" : "F",
-    "isRevealed" : false
-  }, {
-    "value" : "E",
-    "isRevealed" : false
   } ],
-  "currentPlayerIndex" : 0,
-  "selectedIndices" : [ 7 ]
+  "currentPlayerIndex" : 1,
+  "selectedIndices" : [ 0, 1 ]
 }

@@ -15,6 +15,7 @@ lazy val root = project
     libraryDependencies += "net.codingwell" %% "scala-guice" % "7.0.0",
     libraryDependencies += "com.typesafe.play" %% "play-json" % "2.10.0-RC9",
     libraryDependencies += "org.scala-lang.modules" %% "scala-xml" % "2.1.0",
+      coverageExcludedPackages := "<empty>;de.htwg.se.memory.view.*;de.htwg.se.memory.Memory;",
 
 
     coverageEnabled := true,
