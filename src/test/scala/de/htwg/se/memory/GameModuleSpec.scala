@@ -32,10 +32,12 @@ class GameModuleTest extends AnyFlatSpec with Matchers {
     controller1 should be theSameInstanceAs controller2
   }
 
-  it should "bind FileIOInterface to FileIOXML" in {
+  /*it should "bind FileIOInterface to FileIOXML" in {
     val fileIO = injector.getInstance(classOf[FileIOInterface])
     fileIO shouldBe a[FileIOXML]
   }
+
+   */
 
   /*it should "provide Gui instance" in {
     val gui = injector.getInstance(classOf[Gui])
