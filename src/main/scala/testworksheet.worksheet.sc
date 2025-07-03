@@ -1,4 +1,3 @@
-
 case class Karte(Symbol: String, isFaceUp: Boolean = false)
 
 
