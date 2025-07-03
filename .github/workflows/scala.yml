@@ -28,7 +28,7 @@ jobs:
         run: sbt compile
 
       - name: Run tests with coverage
-        run: sbt -Djava.awt.headless=true clean coverage test coverageReport
+        run: sbt clean coverage test coverageReport
 
       - name: Upload coverage data to Coveralls
         run: sbt coveralls
