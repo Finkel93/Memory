@@ -27,7 +27,7 @@ class GameModule extends AbstractModule with ScalaModule {
     bind(classOf[Gui]).toProvider(classOf[GuiProvider])
     bind(classOf[Tui])
 
-    bind[FileIOInterface].to[FileIOXML]  //to[FileIOJson]
+    bind[FileIOInterface].to[FileIOJson] //to[FileIOXML]
   }
 }
 
