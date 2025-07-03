@@ -1,226 +1,360 @@
-package de.htwg.se.memory.controller
-
-import de.htwg.se.memory.model.{Card, Board, Game, Player}
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
+import org.mockito.Mockito._
+import org.mockito.Mockito
+import org.mockito.ArgumentMatchers._
+import de.htwg.se.memory.model._
+import de.htwg.se.memory.controller._
+import de.htwg.se.memory.controller.command._
+import de.htwg.se.memory.model.fileIO._
 import de.htwg.se.memory.controller.strategy._
-import de.htwg.se.memory.controller.state._
+
+import javax.swing.Timer
 
 class ControllerSpec extends AnyWordSpec with Matchers {
 
-  "A Controller" should {
+  "Controller" should {
 
-   /*"set the match strategy and use it on nextTurn" in {
-      var strategyUsed = false
 
-      val testStrategy = new MatchStrategy {
-        override def handleMatch(controller: Controller, idx1: Int, idx2: Int): Unit = {
-          strategyUsed = true
-        }
-      }
+    
+    "execute command and update stacks correctly" in {
+      val gameState = mock(classOf[ModelInterface])
+      val fileIO = mock(classOf[FileIOInterface])
+      val controller = new Controller(gameState, fileIO)
 
-      val cards = List(Card("A", true), Card("A", true))
-      val board = Board(cards)
-      val players = List(Player("Anna"), Player("Ben"))
-      val game = Game(board, players, selectedIndices = List(0, 1))
+      val command = mock(classOf[Command])
+      controller.executeCommand(command)
 
-      val controller = new Controller(game)
-      //controller.setMatchStrategy(testStrategy)
-
-      controller.nextTurn()
-
-      strategyUsed shouldBe true
+      verify(command).doStep()
+      controller.canUndo shouldBe true
+      controller.canRedo shouldBe false
     }
 
-    */
-
-    "return the name of the current state" in {
-      val dummyState = new GameState {
-        override def handleInput(input: Int, controller: Controller): Unit = ()
-
-        override def name: String = "DummyState"
-      }
-
-      val controller = new Controller(
-        Game(Board(List(Card("A"), Card("B"))), List(Player("Anna"), Player("Ben")))
+    "stop an active timer and call nextTurn if handleInput is called while timer is running" in {
+      // Zwei ungleiche Karten
+      val cards = List(
+        Card("X"), Card("Y"),
+        Card("Z"), Card("A"),
+        Card("B"), Card("C"),
+        Card("D"), Card("E"),
+        Card("F"), Card("G"),
+        Card("H"), Card("I")
       )
 
-      // Standardstate zu Beginn
-      //controller.getStateName should not be "DummyState"
-
-      controller.setState(dummyState)
-
-      controller.state.name shouldBe "DummyState"
-      controller.getStateName shouldBe "DummyState"
-    }
-
-
-    "select a card and reveal it" in {
-      val board = Board(List(Card("A"), Card("B"), Card("A"), Card("B")))
-      val players = List(Player("Anna"), Player("Ben"))
-      var game = Game(board, players)
-      val controller = new Controller(game)
-
-      // Karte 0 auswählen
-      controller.selectCard(0)
-
-      controller.gameState.board.cards(0).isRevealed shouldBe true
-      controller.gameState.selectedIndices should contain(0)
-    }
-
-    "switch to the next player when two different cards are selected" in {
-      val board = Board(List(Card("A"), Card("A"), Card("B"), Card("B")))
-      val players = List(Player("Anna"), Player("Ben"))
-      var game = Game(board, players)
-      val controller = new Controller(game)
-
-      // Karten 0 und 1 auswählen
-      controller.selectCard(0)
-      controller.selectCard(2)
-      controller.nextTurn()
-      // Spieler wechseln
-      controller.gameState.currentPlayerIndex shouldBe 1 // Nächster Spieler (Ben) ist jetzt dran
-    }
-
-    "not allow selecting a card that is already revealed" in {
-      val board = Board(List(Card("A", true), Card("B"), Card("A"), Card("B")))
-      val players = List(Player("Anna"), Player("Ben"))
-      var game = Game(board, players)
-      val controller = new Controller(game)
-
-      // Karte 0 ist bereits aufgedeckt
-      an[IllegalArgumentException] should be thrownBy controller.selectCard(0)
-    }
-
-    "keep track of the current player" in {
-      val board = Board(List(Card("A"), Card("A"), Card("B"), Card("B")))
-      val players = List(Player("Anna"), Player("Ben"))
-      var game = Game(board, players)
-      val controller = new Controller(game)
-
-      controller.currentPlayer.name shouldBe "Anna"
-    }
-
-    "keep the player on the same turn if the cards match" in {
-      val board = Board(List(Card("A"), Card("A"), Card("B"), Card("B")))
-      val players = List(Player("Anna"), Player("Ben"))
-      var game = Game(board, players)
-      val controller = new Controller(game)
-
-      // Karten 0 und 1 auswählen
-      controller.selectCard(0)
-      controller.selectCard(1)
-      controller.nextTurn()
-      // Der Spieler Anna bleibt am Zug
-      game.currentPlayerIndex shouldBe 0
-    }
-
-    "correctly detect if the game is over" in {
-      val board = Board(List(
-        Card("X", true), Card("X", true),
-        Card("Y", true), Card("Y", true)
-      ))
-      val players = List(Player("Anna", 2), Player("Ben", 0))
+      val board = Board(cards)
+      val players = List(Player("Player 1"), Player("Player 2"))
       val game = Game(board, players)
-      val controller = new Controller(game)
 
-      controller.isGameOver shouldBe true
+      val mockFileIO = Mockito.mock(classOf[FileIOInterface])
+      val controller = new Controller(game, mockFileIO)
+
+      // Zuerst zwei unterschiedliche Karten aufdecken → Timer startet
+      controller.handleInput(0)
+      controller.handleInput(1)
+
+      // Timer sollte nun laufen
+      val maybeTimer = controller.hideCardsTimer
+      maybeTimer should not be empty
+      val timer = maybeTimer.get
+      timer.isRunning shouldBe true
+
+      // Spy auf die Methode nextTurn (alternativ durch Zustand prüfen)
+      val oldPlayerIndex = controller.gameState.currentPlayerIndex
+
+      // Rufe handleInput auf, während Timer noch läuft
+      controller.handleInput(2)
+
+      // Timer muss gestoppt worden sein
+      timer.isRunning shouldBe false
+
+      // Der Spielerwechsel (nextTurn) sollte erfolgt sein
+      controller.gameState.currentPlayerIndex should not be oldPlayerIndex
     }
 
-    "update the board view correctly" in {
-      val board = Board(List(Card("X"), Card("Y"), Card("Z"), Card("W")))
-      val players = List(Player("Anna"), Player("Ben"))
-      var game = Game(board, players)
-      val controller = new Controller(game)
+    "start a timer when two selected cards do not match" in {
+      // Karten mit unterschiedlichem Wert
+      val cards = List(
+        Card("A"), Card("B"),
+        Card("C"), Card("D"),
+        Card("E"), Card("F"),
+        Card("G"), Card("H"),
+        Card("I"), Card("J"),
+        Card("K"), Card("L")
+      )
 
-      controller.selectCard(0)
-      controller.boardView should include("X")
-      controller.selectCard(1)
-      controller.boardView should include("Y")
-    }
-
-    "get the correct winner" in {
-      val board = Board(List(
-        Card("X", true), Card("X", true),
-        Card("Y", true), Card("Y", true)
-      ))
-      val players = List(Player("Anna", 2), Player("Ben", 0))
+      // Stelle sicher, dass Karten "A" und "B" an Position 0 und 1 stehen
+      val board = Board(cards)
+      val players = List(Player("P1"), Player("P2"))
       val game = Game(board, players)
-      val controller = new Controller(game)
 
-      controller.getWinners.map(_.name) should contain("Anna")
+      // Mock FileIO (wird nicht verwendet in diesem Test)
+      val mockFileIO = Mockito.mock(classOf[FileIOInterface])
+
+      val controller = new Controller(game, mockFileIO)
+
+      // handleInput simuliert das Aufdecken von zwei nicht passenden Karten
+      controller.handleInput(0) // Karte A
+      controller.handleInput(1) // Karte B (nicht gleich A)
+
+      // Timer sollte jetzt gestartet sein
+      controller.hideCardsTimer should not be empty
+      controller.hideCardsTimer.get.isRunning shouldBe true
     }
+    "startHideCardsTimer should schedule nextTurn and stop timer after timeout" in {
+      // Zwei ungleiche Karten
+      val cards = List(
+        Card("1"), Card("2"),
+        Card("3"), Card("4"),
+        Card("5"), Card("6"),
+        Card("7"), Card("8"),
+        Card("9"), Card("10"),
+        Card("11"), Card("12")
+      )
 
-    "handle a game with a tie" in {
-      val board = Board(List(
-        Card("X", true), Card("X", true),
-        Card("Y", true), Card("Y", true)
-      ))
-      val players = List(Player("Anna", 1), Player("Ben", 1))
+      val board = Board(cards)
+      val players = List(Player("Player 1"), Player("Player 2"))
       val game = Game(board, players)
-      val controller = new Controller(game)
 
-      controller.getWinners.map(_.name) should contain allOf("Anna", "Ben")
+      val mockFileIO = Mockito.mock(classOf[FileIOInterface])
+      val controller = new Controller(game, mockFileIO)
+
+      // Decke zwei verschiedene Karten auf
+      controller.handleInput(0)
+      controller.handleInput(1)
+
+      // Timer sollte jetzt laufen
+      val maybeTimer = controller.hideCardsTimer
+      maybeTimer should not be empty
+      val timer = maybeTimer.get
+      timer.isRunning shouldBe true
+
+      // Speichere aktuellen PlayerIndex (wird sich nach Timer ändern)
+      val oldPlayerIndex = controller.gameState.currentPlayerIndex
+
+      // Simuliere Ablauf des Timers manuell (wie in Zeile 113-117)
+      val action = timer.getActionListeners.head
+      action.actionPerformed(new java.awt.event.ActionEvent(timer, 0, "timer"))
+
+      // Sicherstellen, dass:
+      // 1. Timer gestoppt wurde (Zeile 114)
+      timer.isRunning shouldBe false
+
+      // 2. hideCardsTimer auf None gesetzt wurde (Zeile 116)
+      controller.hideCardsTimer shouldBe None
+
+      // 3. nextTurn wurde aufgerufen → Spielerwechsel (Zeile 115)
+      controller.gameState.currentPlayerIndex should not be oldPlayerIndex
     }
 
-    "wait for a second revealed Card" in {
-      val board = Board(List(Card("X"), Card("Y"), Card("Z"), Card("W")))
-      val players = List(Player("Anna"), Player("Ben"))
-      var game = Game(board, players)
-      val controller = new Controller(game)
-
-      controller.selectCard(0)
-      val initialController = controller
-      controller.nextTurn()
-
-      controller shouldBe initialController
-
-    }
-
-
-    "support undo and redo operations" in {
-      val board = Board(List(Card("A"), Card("B"), Card("A"), Card("B")))
-      val players = List(Player("Anna"), Player("Ben"))
-      var game = Game(board, players)
-      val controller = new Controller(game)
-
-      // selectCard wird über handleInput (mit Command) getestet
-      controller.handleInput(0) // Karte 0 aufdecken
-      controller.gameState.board.cards(0).isRevealed shouldBe true
-      controller.gameState.selectedIndices should contain(0)
-
-      controller.undo() // Rückgängig machen
-      controller.gameState.board.cards(0).isRevealed shouldBe false
-      controller.gameState.selectedIndices should not contain (0)
-
-      controller.redo() // Wiederholen
-      controller.gameState.board.cards(0).isRevealed shouldBe true
-      controller.gameState.selectedIndices should contain(0)
-    }
-    "do nothing on undo if no command was executed" in {
-      val board = Board(List(Card("A"), Card("B")))
-      val players = List(Player("Anna"), Player("Ben"))
+    "startHideCardsTimer should stop running timer before starting a new one" in {
+      val cards = List(
+        Card("1"), Card("1"), // gleiche Karten, damit Timer nicht gleich weg ist
+        Card("3"), Card("4"),
+        Card("5"), Card("6"),
+        Card("7"), Card("8"),
+        Card("9"), Card("10"),
+        Card("11"), Card("12")
+      )
+      val board = Board(cards)
+      val players = List(Player("Player 1"), Player("Player 2"))
       val game = Game(board, players)
-      val controller = new Controller(game)
 
-      // Der Undo-Stack ist leer, da kein Kommando ausgeführt wurde
+      val mockFileIO = Mockito.mock(classOf[FileIOInterface])
+      val controller = new Controller(game, mockFileIO)
+
+      // Erst mal Timer starten mit zwei unterschiedlichen Karten (0 und 3)
+      controller.handleInput(0)
+      controller.handleInput(3)
+      val firstTimer = controller.hideCardsTimer.get
+      firstTimer.isRunning shouldBe true
+
+      // Jetzt startHideCardsTimer erneut aufrufen — es sollte den alten Timer stoppen
+      controller.startHideCardsTimer()
+
+      val secondTimer = controller.hideCardsTimer.get
+      secondTimer.isRunning shouldBe true
+
+      // Prüfe, dass der erste Timer nicht mehr läuft (wurde gestoppt)
+      firstTimer.isRunning shouldBe false
+
+      // Der zweite Timer ist ein neuer Timer und läuft jetzt
+      secondTimer should not be firstTimer
+    }
+
+
+    "selectCard throws exception if card is revealed" in {
+      val card = mock(classOf[CardInterface])
+      when(card.isRevealed).thenReturn(true)
+      val board = mock(classOf[BoardInterface])
+      when(board.cards).thenReturn(List(card))
+
+      val gameState = mock(classOf[ModelInterface])
+      when(gameState.board).thenReturn(board)
+
+      val fileIO = mock(classOf[FileIOInterface])
+      val controller = new Controller(gameState, fileIO)
+
+      an [IllegalArgumentException] should be thrownBy controller.selectCard(0)
+    }
+    "execute a command and push it to the undo stack" in {
+      val gameState = mock(classOf[ModelInterface])
+      val fileIO = mock(classOf[FileIOInterface])
+      val controller = new Controller(gameState, fileIO)
+
+      val command = mock(classOf[Command])
+      controller.executeCommand(command)
+
+      verify(command, times(1)).doStep()
+      controller.canUndo shouldBe true
+      controller.canRedo shouldBe false
+    }
+
+    "undo a command and move it to the redo stack" in {
+      val gameState = mock(classOf[ModelInterface])
+      val fileIO = mock(classOf[FileIOInterface])
+      val controller = new Controller(gameState, fileIO)
+
+      val command = mock(classOf[Command])
+      controller.executeCommand(command)
+      controller.undo()
+
+      verify(command, times(1)).undoStep()
+      controller.canUndo shouldBe false
+      controller.canRedo shouldBe true
+    }
+
+    "redo a command and move it back to the undo stack" in {
+      val gameState = mock(classOf[ModelInterface])
+      val fileIO = mock(classOf[FileIOInterface])
+      val controller = new Controller(gameState, fileIO)
+
+      val command = mock(classOf[Command])
+      controller.executeCommand(command)
+      controller.undo()
+      controller.redo()
+
+      verify(command, times(1)).redoStep()
+      controller.canUndo shouldBe true
+      controller.canRedo shouldBe false
+    }
+
+    "not undo if the undo stack is empty" in {
+      val gameState = mock(classOf[ModelInterface])
+      val fileIO = mock(classOf[FileIOInterface])
+      val controller = new Controller(gameState, fileIO)
+
       noException should be thrownBy controller.undo()
-
-      // Optional: Zustand vergleichen, um sicherzustellen, dass sich nichts verändert hat
-      controller.gameState shouldBe game
+      controller.canUndo shouldBe false
     }
-    "do nothing on redo if no command was undone" in {
-      val board = Board(List(Card("A"), Card("B")))
-      val players = List(Player("Anna"), Player("Ben"))
-      val game = Game(board, players)
-      val controller = new Controller(game)
 
-      // Redo-Stack ist leer, da noch kein undo ausgeführt wurde
+    "not redo if the redo stack is empty" in {
+      val gameState = mock(classOf[ModelInterface])
+      val fileIO = mock(classOf[FileIOInterface])
+      val controller = new Controller(gameState, fileIO)
+
       noException should be thrownBy controller.redo()
-
-      // Zustand sollte unverändert bleiben
-      controller.gameState shouldBe game
+      controller.canRedo shouldBe false
     }
 
+    "clear redo stack when a new command is executed" in {
+      val gameState = mock(classOf[ModelInterface])
+      val fileIO = mock(classOf[FileIOInterface])
+      val controller = new Controller(gameState, fileIO)
+
+      val command1 = mock(classOf[Command])
+      val command2 = mock(classOf[Command])
+
+      controller.executeCommand(command1)
+      controller.undo()
+      controller.canRedo shouldBe true
+
+      controller.executeCommand(command2)
+      controller.canRedo shouldBe false
+    }
+
+    "delegate boardView to gameState.board.displayCards" in {
+      val mockBoard = mock(classOf[BoardInterface])
+      val mockModel = mock(classOf[ModelInterface])
+      val fileIO = mock(classOf[FileIOInterface])
+
+      val cards = List.empty[Card]
+      when(mockModel.board).thenReturn(mockBoard)
+      when(mockBoard.cards).thenReturn(cards)
+      when(mockBoard.displayCards(cards)).thenReturn("mocked board view")
+
+      val controller = new Controller(mockModel, fileIO)
+
+      controller.boardView shouldBe "mocked board view"
+      verify(mockBoard, times(1)).displayCards(cards)
+    }
+
+    "delegate getWinners to gameState.getWinners" in {
+      val mockPlayer = mock(classOf[PlayerInterface])
+      when(mockPlayer.name).thenReturn("Player1")
+      val mockModel = mock(classOf[ModelInterface])
+      val fileIO = mock(classOf[FileIOInterface])
+
+      val expectedWinners = List(mockPlayer)
+      when(mockModel.getWinners).thenReturn(expectedWinners)
+
+      val controller = new Controller(mockModel, fileIO)
+
+      controller.getWinners shouldBe expectedWinners
+      verify(mockModel, times(1)).getWinners
+    }
+
+
+    "handle input and execute a SetCardCommand" in {
+      val mockFileIO = mock(classOf[FileIOInterface])
+
+
+      // Vorbereiteter Spielzustand: Zwei Karten mit gleichem Wert
+      val cards = List(
+        Card("A", isRevealed = false),
+        Card("A", isRevealed = false)
+      )
+      val board = Board(cards)
+      val players = List(Player("P1"), Player("P2"))
+      val game = Game(board, players)
+      val controller = new Controller(game, mockFileIO)
+      controller.matchStrategy = new KeepOpenStrategy // einfacher zu testen
+
+      controller.handleInput(0) // Karte 0
+      controller.handleInput(1) // Karte 1
+
+      // Jetzt sind zwei Karten aufgedeckt -> Match-Logik greift
+      controller.gameState.board.cards(0).isRevealed shouldBe true
+      controller.gameState.board.cards(1).isRevealed shouldBe true
+
+      // currentPlayer sollte am Zug bleiben, da Match (KeepOpenStrategy)
+      controller.gameState.currentPlayerIndex shouldBe 0
+    }
+
+    "handle mismatching cards and schedule hide timer" in {
+      val mockFileIO = mock(classOf[FileIOInterface])
+
+
+      val cards = List(
+        Card("A", isRevealed = false),
+        Card("B", isRevealed = false)
+      )
+      val board = Board(cards)
+      val players = List(Player("P1"), Player("P2"))
+
+      val game = Game(board, players)
+        .selectCard(0)
+        .selectCard(1)
+
+      val controller = new Controller(game, mockFileIO)
+
+      controller.handleInput(0)
+      controller.handleInput(1)
+
+      controller.gameState.selectedIndices should contain allOf (0, 1)
+
+      // Timer für spätere Kartenverdeckung sollte gestartet sein
+      controller.hideCardsTimer.isDefined shouldBe true
+      controller.hideCardsTimer.get.isRunning shouldBe true
+    }
   }
 }

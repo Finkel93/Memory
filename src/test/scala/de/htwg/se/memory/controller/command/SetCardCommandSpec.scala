@@ -4,6 +4,8 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
 import de.htwg.se.memory.controller.Controller
 import de.htwg.se.memory.model.{Card, Board, Game, Player}
+import de.htwg.se.memory.model.ModelInterface
+import de.htwg.se.memory.model.fileIO._
 import de.htwg.se.memory.controller.strategy.KeepOpenStrategy
 
 class SetCardCommandSpec extends AnyWordSpec with Matchers {
@@ -18,9 +20,15 @@ class SetCardCommandSpec extends AnyWordSpec with Matchers {
         Card("A", isRevealed = false)
       )
       val board = Board(cards)
+      
       val game = Game(board, List(player1, player2), currentPlayerIndex = 0, selectedIndices = List())
+      val dummyFileIO = new FileIOInterface {
+        override def save(game: ModelInterface): Unit = {}
 
-      val controller = new Controller(game)
+        override def load(): ModelInterface = game
+      }
+
+      val controller = new Controller(game, dummyFileIO)
       //controller.setMatchStrategy(new KeepOpenStrategy)
 
       val cmd = new SetCardCommand(0, controller)

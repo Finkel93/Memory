@@ -14,7 +14,7 @@ object Memory {
   @volatile private var running = true
 
   def main(args: Array[String]): Unit = {
-    val injector = Guice.createInjector(new ControllerModule())
+    val injector = Guice.createInjector(new GameModule())
     val controller = injector.instance[ControllerInterface]
 
     val guiProvider = injector.instance[GuiProvider]

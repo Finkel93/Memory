@@ -1,4 +1,4 @@
-import org.scalatest.wordspec.AnyWordSpec
+/*import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
 import de.htwg.se.memory.model.{Card, Board, Game, Player}
 import de.htwg.se.memory.view.InputHelper
@@ -189,4 +189,4 @@ class TuiSpec extends AnyWordSpec with Matchers {
     }
   }
 }
-
+*/

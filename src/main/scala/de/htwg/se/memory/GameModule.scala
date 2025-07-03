@@ -14,7 +14,7 @@ import de.htwg.se.memory.controller.Controller
 import de.htwg.se.memory.view._
 
 
-class ControllerModule extends AbstractModule with ScalaModule {
+class GameModule extends AbstractModule with ScalaModule {
   override def configure(): Unit = {
     val factory = new DynamicCardSetFactory(6)
     val cards = factory.createCards()

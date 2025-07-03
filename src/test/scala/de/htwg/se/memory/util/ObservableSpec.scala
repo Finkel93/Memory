@@ -5,12 +5,14 @@ import org.scalatest.matchers.should.Matchers
 
 class ObservableSpec extends AnyWordSpec with Matchers {
 
+  // Hilfsklasse, um das Trait Observable zu testen
+  class TestObservable extends Observable
+
   "An Observable" should {
 
     "notify all registered observers when notifyObservers is called" in {
-      val observable = new Observable
+      val observable = new TestObservable
 
-      // Erstellen von zwei Test-Observers
       var observer1Notified = false
       var observer2Notified = false
 
@@ -21,22 +23,18 @@ class ObservableSpec extends AnyWordSpec with Matchers {
         def update: Unit = observer2Notified = true
       }
 
-      // Hinzufügen der Observer zum Observable
       observable.add(observer1)
       observable.add(observer2)
 
-      // Benachrichtigen der Observer
       observable.notifyObservers
 
-      // Überprüfen, dass beide Observer benachrichtigt wurden
       observer1Notified shouldBe true
       observer2Notified shouldBe true
     }
 
     "not notify removed observers" in {
-      val observable = new Observable
+      val observable = new TestObservable
 
-      // Erstellen von zwei Test-Observers
       var observer1Notified = false
       var observer2Notified = false
 
@@ -47,25 +45,20 @@ class ObservableSpec extends AnyWordSpec with Matchers {
         def update: Unit = observer2Notified = true
       }
 
-      // Hinzufügen der Observer zum Observable
       observable.add(observer1)
       observable.add(observer2)
 
-      // Entfernen von observer2
       observable.remove(observer2)
 
-      // Benachrichtigen der Observer
       observable.notifyObservers
 
-      // Überprüfen, dass nur observer1 benachrichtigt wurde
       observer1Notified shouldBe true
       observer2Notified shouldBe false
     }
 
     "correctly handle multiple observers" in {
-      val observable = new Observable
+      val observable = new TestObservable
 
-      // Erstellen von drei Test-Observers
       var observer1Notified = false
       var observer2Notified = false
       var observer3Notified = false
@@ -80,15 +73,12 @@ class ObservableSpec extends AnyWordSpec with Matchers {
         def update: Unit = observer3Notified = true
       }
 
-      // Hinzufügen der Observer zum Observable
       observable.add(observer1)
       observable.add(observer2)
       observable.add(observer3)
 
-      // Benachrichtigen der Observer
       observable.notifyObservers
 
-      // Überprüfen, dass alle Observer benachrichtigt wurden
       observer1Notified shouldBe true
       observer2Notified shouldBe true
       observer3Notified shouldBe true
